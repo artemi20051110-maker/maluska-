@@ -1,0 +1,45 @@
+body {
+    background-color: #0a0a0a;
+    color: #d1d1d1;
+    font-family: 'Montserrat', sans-serif;
+    margin: 0; padding: 15px;
+}
+
+.container {
+    border: 1px solid #3d0000;
+    background: #111;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+h1 {
+    color: #8b0000;
+    font-size: 20px;
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+label { font-size: 13px; color: #666; display: block; margin-bottom: 5px; }
+
+select, input {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.btn-active {
+    background: #8b0000;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.info-text { font-size: 12px; color: #8b0000; margin-top: -10px; margin-bottom: 10px; }
