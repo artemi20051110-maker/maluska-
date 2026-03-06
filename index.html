@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=fresh_style">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -51,14 +51,14 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
-    let tg = window.Telegram.WebApp;
+    const tg = window.Telegram.WebApp;
     let selectedAge = "";
 
-    tg.expand(); // Развернуть окно на весь экран
+    tg.expand(); // Разворачиваем на весь экран
 
     function setAge(age) {
         selectedAge = age >= 18 ? "18+" : "до 18";
-        // Подсветка кнопок
+        // Убираем активный класс у всех и даем нажатой
         document.getElementById('age-18').classList.remove('active');
         document.getElementById('age-under').classList.remove('active');
         
@@ -81,11 +81,11 @@
         };
 
         if (!selectedAge || !data.date || !data.time) {
-            alert("Заполни все поля, бро");
+            alert("бро, заполни всё, иначе мария не поймет!");
             return;
         }
 
-        tg.sendData(JSON.stringify(data));
+        tg.sendData(JSON.stringify(data)); // Вот теперь данные улетят в бота
     }
 </script>
 </body>
