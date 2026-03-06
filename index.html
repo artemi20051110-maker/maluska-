@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -50,37 +50,43 @@
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        let tg = window.Telegram.WebApp;
-        let selectedAge = null;
+<script>
+    let tg = window.Telegram.WebApp;
+    let selectedAge = "";
 
-        function setAge(age) {
-            selectedAge = age;
-            document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('active'));
-            if(age === 18) document.getElementById('age-18').classList.add('active');
-            else document.getElementById('age-under').classList.add('active');
-            document.getElementById('age-warning').style.display = age < 18 ? 'block' : 'none';
+    tg.expand(); // Развернуть окно на весь экран
+
+    function setAge(age) {
+        selectedAge = age >= 18 ? "18+" : "до 18";
+        // Подсветка кнопок
+        document.getElementById('age-18').classList.remove('active');
+        document.getElementById('age-under').classList.remove('active');
+        
+        if (age >= 18) {
+            document.getElementById('age-18').classList.add('active');
+            document.getElementById('age-warning').style.display = 'none';
+        } else {
+            document.getElementById('age-under').classList.add('active');
+            document.getElementById('age-warning').style.display = 'block';
         }
+    }
 
-        function checkAnatomy() {
-            const val = document.getElementById('service_type').value;
-            const warning = document.getElementById('anatomy-info');
-            warning.style.display = (val === 'industrial' || val === 'navel') ? 'block' : 'none';
-        }
-
-        document.getElementById('submit_btn').onclick = function() {
-            if(!selectedAge) return alert('Выбери возраст!');
-            
-            let data = {
-                age: selectedAge,
-                service: document.getElementById('service_type').value,
-                count: document.getElementById('count').value,
-                date: document.getElementById('order_date').value,
-                time: document.getElementById('order_time').value
-            };
-            tg.sendData(JSON.stringify(data));
-            tg.close();
+    function sendData() {
+        const data = {
+            service: document.getElementById('service').value,
+            quantity: document.getElementById('quantity').value,
+            date: document.getElementById('date').value,
+            time: document.getElementById('time').value,
+            age: selectedAge
         };
-    </script>
+
+        if (!selectedAge || !data.date || !data.time) {
+            alert("Заполни все поля, бро");
+            return;
+        }
+
+        tg.sendData(JSON.stringify(data));
+    }
+</script>
 </body>
 </html>
