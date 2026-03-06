@@ -3,61 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>МАЛЮСКА ПИРСИНГ</title>
-    <link rel="stylesheet" href="style.css?v=final_fix">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=russian_only">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1 class="title">МАЛЮСКА ПИРСИНГ</h1>
+        <h1 class="title">МАЛЮСКА<br>ПИРСИНГ</h1>
         
         <div class="form-group">
-            <label>Твой возраст:</label>
+            <label>твой возраст:</label>
             <div class="age-selector">
-                <button type="button" class="age-btn" id="age-18" onclick="setAge(18)">МНЕ ЕСТЬ 18</button>
-                <button type="button" class="age-btn" id="age-under" onclick="setAge(17)">МНЕ НЕТ 18</button>
+                <button type="button" class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
+                <button type="button" class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
             </div>
-            <p id="age-warning" class="warning" style="display: none;">Нужно присутствие родителей или записка!</p>
+            <p id="age-warning" class="warning" style="display: none;">нужно присутствие родителей или записка!</p>
         </div>
 
         <div class="form-group">
-            <label>Что колем?</label>
+            <label>что колем?</label>
             <select id="service_type">
-                <option value="Мочка уха">Мочка уха</option>
-                <option value="Хеликс">Хеликс</option>
-                <option value="Индастриал">Индастриал (важна анатомия!)</option>
-                <option value="Септум">Септум</option>
-                <option value="Нострил">Нострил</option>
-                <option value="Пупок">Пупок (важна анатомия!)</option>
+                <option value="мочка уха">мочка уха</option>
+                <option value="хеликс">хеликс</option>
+                <option value="индастриал">индастриал</option>
+                <option value="септум">септум</option>
+                <option value="нострил">нострил</option>
+                <option value="пупок">пупок</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label>Кол-во проколов (макс. 3):</label>
+            <label>кол-во проколов:</label>
             <input type="number" id="count" min="1" max="3" value="1">
         </div>
 
         <div class="form-group">
-            <label>Дата и время:</label>
-            <input type="date" id="order_date">
-            <input type="time" id="order_time">
+            <label>дата и время:</label>
+            <div class="datetime-row">
+                <input type="date" id="order_date">
+                <input type="time" id="order_time">
+            </div>
         </div>
 
-        <button class="main-button" id="submit_btn" onclick="sendData()">ЗАБРОНИРОВАТЬ (300₽)</button>
+        <button class="main-button" id="submit_btn" onclick="sendData()">забронировать (300₽)</button>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
         let selectedAge = "";
-
         tg.expand();
 
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
             document.getElementById('age-18').classList.remove('active');
             document.getElementById('age-under').classList.remove('active');
-            
             if (age >= 18) {
                 document.getElementById('age-18').classList.add('active');
                 document.getElementById('age-warning').style.display = 'none';
@@ -75,12 +74,10 @@
                 time: document.getElementById('order_time').value,
                 age: selectedAge
             };
-
             if (!selectedAge || !data.date || !data.time) {
-                alert("бро, заполни всё, иначе мария не поймет!");
+                tg.showAlert("заполни все поля, бро!");
                 return;
             }
-
             tg.sendData(JSON.stringify(data));
         }
     </script>
