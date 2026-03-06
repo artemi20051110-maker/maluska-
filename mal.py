@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import WebAppInfo
 
 load_dotenv()
 
@@ -31,7 +31,6 @@ def init_db():
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    # сохраняем юзера в базу (как и раньше)
     conn = sqlite3.connect("malusko.db")
     cursor = conn.cursor()
     cursor.execute("INSERT OR REPLACE INTO users VALUES (?,?,?)",
@@ -39,7 +38,6 @@ async def start(message: types.Message):
     conn.commit()
     conn.close()
 
-    # устанавливаем кнопку меню (слева от ввода текста)
     await bot.set_chat_menu_button(
         chat_id=message.chat.id,
         menu_button=types.MenuButtonWebApp(
@@ -47,28 +45,29 @@ async def start(message: types.Message):
             web_app=WebAppInfo(url="https://artemi20051110-maker.github.io/maluska-/")
         )
     )
-    
-    await message.answer("привет! нажми на кнопку в меню слева, чтобы записаться на сеанс.")
+    await message.answer("привет! нажми на кнопку в меню слева, чтобы записаться.")
+
 @dp.message(F.web_app_data)
 async def handle_data(message: types.Message):
     data = json.loads(message.web_app_data.data)
     
-    # логика уведомления
-    report = (f"новая заявка\n"
-              f"клиент: @{message.from_user.username}\n"
-              f"услуга: {data['service']}\n"
-              f"дата/время: {data['date']} в {data['time']}\n"
-              f"возраст: {data['age']}")
+    report = (f"🩸 НОВАЯ ЗАЯВКА\n"
+              f"Клиент: @{message.from_user.username}\n"
+              f"Услуга: {data['service']} (x{data['quantity']})\n"
+              f"Дата/время: {data['date']} в {data['time']}\n"
+              f"Возраст: {data['age']}")
     
     await bot.send_message(ADMIN_ID, report)
     if LOG_CHANNEL:
-        await bot.send_message(LOG_CHANNEL, report)
-    await message.answer("данные отправлены мастеру.")
-    
-    @dp.message(F.text)
-    async def forward_to_admin(message: types.Message):
-    # если пишет не админ, пересылаем админу
-     if message.from_user.id != ADMIN_ID:
+        try:
+            await bot.send_message(LOG_CHANNEL, report)
+        except:
+            pass
+    await message.answer("данные отправлены мастеру. жди подтверждения!")
+
+@dp.message(F.text)
+async def forward_to_admin(message: types.Message):
+    if message.from_user.id != ADMIN_ID:
         await bot.send_message(
             ADMIN_ID, 
             f"сообщение от @{message.from_user.username or 'без_юзернейма'}:\n\n{message.text}"

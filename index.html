@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=fresh_style">
+    <title>МАЛЮСКА ПИРСИНГ</title>
+    <link rel="stylesheet" href="style.css?v=final_fix">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -21,18 +22,14 @@
 
         <div class="form-group">
             <label>Что колем?</label>
-            <select id="service_type" onchange="checkAnatomy()">
-                <option value="ear_lobe">Мочка уха</option>
-                <option value="helix">Хеликс</option>
-                <option value="industrial">Индастриал (важна анатомия!)</option>
-                <option value="septum">Септум</option>
-                <option value="nostril">Нострил</option>
-                <option value="navel">Пупок (важна анатомия!)</option>
+            <select id="service_type">
+                <option value="Мочка уха">Мочка уха</option>
+                <option value="Хеликс">Хеликс</option>
+                <option value="Индастриал">Индастриал (важна анатомия!)</option>
+                <option value="Септум">Септум</option>
+                <option value="Нострил">Нострил</option>
+                <option value="Пупок">Пупок (важна анатомия!)</option>
             </select>
-        </div>
-
-        <div id="anatomy-info" class="info-box" style="display: none;">
-            ⚠️ Для этого прокола важна анатомия. Мастер может отказать или предложить другой вариант на сеансе.
         </div>
 
         <div class="form-group">
@@ -46,47 +43,46 @@
             <input type="time" id="order_time">
         </div>
 
-        <button class="main-btn" id="submit_btn">ЗАБРОНИРОВАТЬ (300₽)</button>
+        <button class="main-button" id="submit_btn" onclick="sendData()">ЗАБРОНИРОВАТЬ (300₽)</button>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script>
-    const tg = window.Telegram.WebApp;
-    let selectedAge = "";
+    <script>
+        const tg = window.Telegram.WebApp;
+        let selectedAge = "";
 
-    tg.expand(); // Разворачиваем на весь экран
+        tg.expand();
 
-    function setAge(age) {
-        selectedAge = age >= 18 ? "18+" : "до 18";
-        // Убираем активный класс у всех и даем нажатой
-        document.getElementById('age-18').classList.remove('active');
-        document.getElementById('age-under').classList.remove('active');
-        
-        if (age >= 18) {
-            document.getElementById('age-18').classList.add('active');
-            document.getElementById('age-warning').style.display = 'none';
-        } else {
-            document.getElementById('age-under').classList.add('active');
-            document.getElementById('age-warning').style.display = 'block';
-        }
-    }
-
-    function sendData() {
-        const data = {
-            service: document.getElementById('service').value,
-            quantity: document.getElementById('quantity').value,
-            date: document.getElementById('date').value,
-            time: document.getElementById('time').value,
-            age: selectedAge
-        };
-
-        if (!selectedAge || !data.date || !data.time) {
-            alert("бро, заполни всё, иначе мария не поймет!");
-            return;
+        function setAge(age) {
+            selectedAge = age >= 18 ? "18+" : "до 18";
+            document.getElementById('age-18').classList.remove('active');
+            document.getElementById('age-under').classList.remove('active');
+            
+            if (age >= 18) {
+                document.getElementById('age-18').classList.add('active');
+                document.getElementById('age-warning').style.display = 'none';
+            } else {
+                document.getElementById('age-under').classList.add('active');
+                document.getElementById('age-warning').style.display = 'block';
+            }
         }
 
-        tg.sendData(JSON.stringify(data)); // Вот теперь данные улетят в бота
-    }
-</script>
+        function sendData() {
+            const data = {
+                service: document.getElementById('service_type').value,
+                quantity: document.getElementById('count').value,
+                date: document.getElementById('order_date').value,
+                time: document.getElementById('order_time').value,
+                age: selectedAge
+            };
+
+            if (!selectedAge || !data.date || !data.time) {
+                alert("бро, заполни всё, иначе мария не поймет!");
+                return;
+            }
+
+            tg.sendData(JSON.stringify(data));
+        }
+    </script>
 </body>
 </html>
