@@ -42,6 +42,12 @@ def init_db():
         )
     ''')
     
+    # 🔥 добавляем колонку last_seen если её нет
+    try:
+        cursor.execute('ALTER TABLE users ADD COLUMN last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+    except sqlite3.OperationalError:
+        pass  # колонка уже есть
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS bookings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,7 +65,7 @@ def init_db():
     conn.commit()
     conn.close()
     logger.info("✅ БАЗА ГОТОВА")
-
+    
 def add_user(user_id, username, first_name):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -67,10 +73,10 @@ def add_user(user_id, username, first_name):
         INSERT OR IGNORE INTO users (user_id, username, first_name)
         VALUES (?, ?, ?)
     ''', (user_id, username, first_name))
-    cursor.execute('UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE user_id = ?', (user_id,))
+    # ❌ УДАЛИ ЭТУ СТРОКУ:
+    # cursor.execute('UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE user_id = ?', (user_id,))
     conn.commit()
     conn.close()
-
 # === КЛАВИАТУРА ===
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
