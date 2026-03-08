@@ -3,6 +3,7 @@ import json
 import logging
 import sqlite3
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -25,7 +26,7 @@ def init_db():
         (user_id INTEGER PRIMARY KEY, username TEXT, first_name TEXT)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS bookings 
         (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, service TEXT, 
-        date TEXT, time TEXT, age_group TEXT)''')
+        date TEXT, time TEXT, age_group TEXT, created_at TEXT)''')
     conn.commit()
     conn.close()
 
@@ -49,21 +50,43 @@ async def start(message: types.Message):
 
 @dp.message(F.web_app_data)
 async def handle_data(message: types.Message):
-    data = json.loads(message.web_app_data.data)
-    
-    report = (f"🩸 НОВАЯ ЗАЯВКА\n"
-              f"Клиент: @{message.from_user.username}\n"
-              f"Услуга: {data['service']} (x{data['quantity']})\n"
-              f"Дата/время: {data['date']} в {data['time']}\n"
-              f"Возраст: {data['age']}")
-    
-    await bot.send_message(ADMIN_ID, report)
-    if LOG_CHANNEL:
-        try:
-            await bot.send_message(LOG_CHANNEL, report)
-        except:
-            pass
-    await message.answer("данные отправлены мастеру. жди подтверждения!")
+    try:
+        data = json.loads(message.web_app_data.data)
+        
+        # сохраняем в базу
+        conn = sqlite3.connect("malusko.db")
+        cursor = conn.cursor()
+        cursor.execute('''INSERT INTO bookings 
+            (user_id, service, date, time, age_group, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?)''',
+            (message.from_user.id, 
+             data.get('service', 'неизвестно'),
+             data.get('date', 'неизвестно'),
+             data.get('time', 'неизвестно'),
+             data.get('age', 'неизвестно'),
+             datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        booking_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        report = (f"🩸 НОВАЯ ЗАЯВКА #{booking_id}\n"
+                  f"Клиент: @{message.from_user.username or 'без_юзернейма'}\n"
+                  f"ID: {message.from_user.id}\n"
+                  f"Услуга: {data.get('service', 'неизвестно')}\n"
+                  f"Дата/время: {data.get('date', '?')} в {data.get('time', '?')}\n"
+                  f"Возраст: {data.get('age', '?')}")
+        
+        await bot.send_message(ADMIN_ID, report)
+        if LOG_CHANNEL:
+            try:
+                await bot.send_message(LOG_CHANNEL, report)
+            except:
+                pass
+        await message.answer("✅ данные отправлены мастеру. жди подтверждения!")
+        
+    except Exception as e:
+        logging.error(f"ошибка обработки данных: {e}")
+        await message.answer("❌ ошибка при отправке. попробуй ещё раз или напиши мастеру.")
 
 @dp.message(F.text)
 async def forward_to_admin(message: types.Message):

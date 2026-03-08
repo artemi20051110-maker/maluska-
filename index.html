@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=final_fix_v2">
+    <link rel="stylesheet" href="style.css?v=final_fix_v3">
 </head>
 <body>
     <div class="container">
@@ -39,33 +39,64 @@
         let selectedAge = ""; 
         tg.expand();
 
+        // устанавливаем минимальную дату - сегодня
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('order_date').setAttribute('min', today);
+
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
-            document.getElementById('age-18').style.background = age >= 18 ? "red" : "#222";
-            document.getElementById('age-under').style.background = age < 18 ? "red" : "#222";
+            
+            // правильно переключаем классы
+            document.getElementById('age-18').classList.remove('active');
+            document.getElementById('age-under').classList.remove('active');
+            
+            if (age >= 18) {
+                document.getElementById('age-18').classList.add('active');
+            } else {
+                document.getElementById('age-under').classList.add('active');
+            }
         }
 
         function sendData() {
-            const data = {
-                service: document.getElementById('service_type').value,
-                date: document.getElementById('order_date').value,
-                time: document.getElementById('order_time').value,
-                age: selectedAge
-            };
+            const service = document.getElementById('service_type').value;
+            const date = document.getElementById('order_date').value;
+            const time = document.getElementById('order_time').value;
 
-            if (!selectedAge || !data.date || !data.time) {
+            if (!selectedAge || !date || !time) {
                 tg.showAlert("заполни все поля!");
                 return;
             }
 
-            // ВНИМАНИЕ: Если ты в MenuButton, sendData может молчать.
-            // Мы пробуем отправить, и если это сработает - окно закроется.
+            // проверяем, что дата не в прошлом
+            const selectedDate = new Date(date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate < today) {
+                tg.showAlert("нельзя выбрать прошедшую дату!");
+                return;
+            }
+
+            const data = {
+                service: service,
+                date: date,
+                time: time,
+                age: selectedAge,
+                username: tg.initDataUnsafe?.user?.username || "неизвестно",
+                user_id: tg.initDataUnsafe?.user?.id || 0
+            };
+
             try {
                 tg.sendData(JSON.stringify(data));
+                tg.close();
             } catch (e) {
-                tg.showAlert("ошибка отправки. попробуй через кнопку в чате.");
+                tg.showAlert("ошибка отправки: " + e.message);
             }
         }
+
+        // устанавливаем тему телеграма
+        tg.onEvent('themeChanged', function() {
+            tg.setHeaderColor(tg.themeParams.bg_color || '#1a0000');
+        });
     </script>
 </body>
 </html>
