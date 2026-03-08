@@ -58,40 +58,44 @@
         }
 
         function sendData() {
-            const service = document.getElementById('service_type').value;
-            const date = document.getElementById('order_date').value;
-            const time = document.getElementById('order_time').value;
+    const service = document.getElementById('service_type').value;
+    const date = document.getElementById('order_date').value;
+    const time = document.getElementById('order_time').value;
 
-            if (!selectedAge || !date || !time) {
-                tg.showAlert("заполни все поля!");
-                return;
-            }
+    // 🔥 собираем данные
+    const data = {
+        service: service,
+        date: date,
+        time: time,
+        age: selectedAge,
+        username: tg.initDataUnsafe?.user?.username || "неизвестно",
+        user_id: tg.initDataUnsafe?.user?.id || 0
+    };
 
-            // проверяем, что дата не в прошлом
-            const selectedDate = new Date(date);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (selectedDate < today) {
-                tg.showAlert("нельзя выбрать прошедшую дату!");
-                return;
-            }
+    // 🔥 проверка перед отправкой
+    if (!selectedAge) {
+        tg.showAlert("выбери возраст!");
+        return;
+    }
+    if (!date || !time) {
+        tg.showAlert("выбери дату и время!");
+        return;
+    }
 
-            const data = {
-                service: service,
-                date: date,
-                time: time,
-                age: selectedAge,
-                username: tg.initDataUnsafe?.user?.username || "неизвестно",
-                user_id: tg.initDataUnsafe?.user?.id || 0
-            };
+    // 🔥 отладка - покажем пользователю что отправляем
+    tg.showAlert("отправляю:\n" + JSON.stringify(data, null, 2));
 
-            try {
-                tg.sendData(JSON.stringify(data));
-                tg.close();
-            } catch (e) {
-                tg.showAlert("ошибка отправки: " + e.message);
-            }
-        }
+    // 🔥 отправка
+    try {
+        tg.sendData(JSON.stringify(data));
+        // закрываем с задержкой - пользователь увидит алерт
+        setTimeout(() => tg.close(), 1000);
+    } catch (e) {
+        tg.showAlert("ошибка: " + e.message);
+        // логи в консоль для разработчика
+        console.error("sendData error:", e);
+    }
+}
 
         // устанавливаем тему телеграма
         tg.onEvent('themeChanged', function() {

@@ -17,7 +17,13 @@ LOG_CHANNEL = os.getenv("LOG_CHANNEL_ID")
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
-logging.basicConfig(level=logging.INFO)
+
+# 🔥 ВАЖНО: включаем подробные логи
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 def init_db():
     conn = sqlite3.connect("malusko.db")
@@ -29,9 +35,12 @@ def init_db():
         date TEXT, time TEXT, age_group TEXT, created_at TEXT)''')
     conn.commit()
     conn.close()
+    logger.info("база данных инициализирована")
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
+    logger.info(f"команда /start от пользователя {message.from_user.id}")
+    
     conn = sqlite3.connect("malusko.db")
     cursor = conn.cursor()
     cursor.execute("INSERT OR REPLACE INTO users VALUES (?,?,?)",
@@ -47,11 +56,16 @@ async def start(message: types.Message):
         )
     )
     await message.answer("привет! нажми на кнопку в меню слева, чтобы записаться.")
+    logger.info(f"меню кнопка установлена для чата {message.chat.id}")
 
 @dp.message(F.web_app_data)
 async def handle_data(message: types.Message):
+    logger.info(f"🔥 ПОЛУЧЕНЫ WEB_APP_DATA от {message.from_user.id}")
+    logger.info(f"сырые данные: {message.web_app_data.data}")
+    
     try:
         data = json.loads(message.web_app_data.data)
+        logger.info(f"распарсенные данные: {data}")
         
         # сохраняем в базу
         conn = sqlite3.connect("malusko.db")
@@ -68,6 +82,7 @@ async def handle_data(message: types.Message):
         booking_id = cursor.lastrowid
         conn.commit()
         conn.close()
+        logger.info(f"запись сохранена в базу с id={booking_id}")
         
         report = (f"🩸 НОВАЯ ЗАЯВКА #{booking_id}\n"
                   f"Клиент: @{message.from_user.username or 'без_юзернейма'}\n"
@@ -76,28 +91,37 @@ async def handle_data(message: types.Message):
                   f"Дата/время: {data.get('date', '?')} в {data.get('time', '?')}\n"
                   f"Возраст: {data.get('age', '?')}")
         
+        logger.info(f"отправляю отчёт админу {ADMIN_ID}")
         await bot.send_message(ADMIN_ID, report)
+        logger.info("отчёт отправлен админу")
+        
         if LOG_CHANNEL:
             try:
                 await bot.send_message(LOG_CHANNEL, report)
-            except:
-                pass
+                logger.info("отчёт отправлен в лог-канал")
+            except Exception as e:
+                logger.error(f"ошибка отправки в лог-канал: {e}")
+        
         await message.answer("✅ данные отправлены мастеру. жди подтверждения!")
+        logger.info("ответ пользователю отправлен")
         
     except Exception as e:
-        logging.error(f"ошибка обработки данных: {e}")
-        await message.answer("❌ ошибка при отправке. попробуй ещё раз или напиши мастеру.")
+        logger.error(f"🔥 ОШИБКА обработки данных: {e}", exc_info=True)
+        await message.answer(f"❌ ошибка при отправке: {str(e)}\nнапиши мастеру вручную.")
 
 @dp.message(F.text)
 async def forward_to_admin(message: types.Message):
     if message.from_user.id != ADMIN_ID:
+        logger.info(f"сообщение от {message.from_user.id} пересылается админу")
         await bot.send_message(
             ADMIN_ID, 
             f"сообщение от @{message.from_user.username or 'без_юзернейма'}:\n\n{message.text}"
         )
 
 async def main():
+    logger.info("запуск бота...")
     init_db()
+    logger.info(f"ADMIN_ID={ADMIN_ID}, LOG_CHANNEL={LOG_CHANNEL}")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
