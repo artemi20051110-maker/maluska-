@@ -15,7 +15,7 @@ load_dotenv()
 # === НАСТРОЙКИ ===
 DB_PATH = os.getenv("DB_PATH", "malusko.db")
 API_TOKEN = os.getenv("BOT_TOKEN")  # 🔥 из .env
-WEB_APP_URL = os.getenv("WEB_APP_URL", "https://maluska-webapp.vercel.app")
+WEB_APP_URL = os.getenv("WEB_APP_URL", "https://maluska.vercel.app")
 ADMIN_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "-1003649793662"))
 MY_ID = int(os.getenv("ADMIN_ID", "426795405"))
 
@@ -65,7 +65,7 @@ def init_db():
     conn.commit()
     conn.close()
     logger.info("✅ БАЗА ГОТОВА")
-    
+
 def add_user(user_id, username, first_name):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
