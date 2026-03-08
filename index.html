@@ -46,15 +46,6 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// Настраиваем системную кнопку
-tg.MainButton.setText("ЗАБРОНИРОВАТЬ (300₽)");
-tg.MainButton.setParams({
-    color: "#ff3333",
-    text_color: "#ffffff"
-});
-tg.MainButton.show(); // Показываем её внизу
-
-// Слушаем нажатие на системную кнопку
 tg.onEvent('mainButtonClicked', function(){
     const data = {
         service: document.getElementById('service_type').value,
@@ -63,13 +54,8 @@ tg.onEvent('mainButtonClicked', function(){
         time: document.getElementById('order_time').value,
         age: selectedAge
     };
-
-    if (!selectedAge || !data.date || !data.time) {
-        tg.showAlert("бро, заполни все поля!");
-        return;
-    }
-
-    // ВАЖНО: для MenuButton используем этот метод, если sendData молчит
+    
+    // Это единственный способ отправить данные из MenuButton
     tg.sendData(JSON.stringify(data));
 });
 
