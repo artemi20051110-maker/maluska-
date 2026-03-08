@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Малюска Пирсинг</title>
-    <link rel="stylesheet" href="style.css?v=final_fix">
+    <link rel="stylesheet" href="style.css?v=final">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -17,24 +16,15 @@
                 <button type="button" class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
                 <button type="button" class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
             </div>
-            <p id="age-warning" class="warning" style="display: none;">нужно присутствие родителей или записка!</p>
         </div>
 
         <div class="form-group">
             <label>что колем?</label>
             <select id="service_type">
                 <option value="мочка уха">мочка уха</option>
-                <option value="хеликс">хеликс</option>
-                <option value="индастриал">индастриал</option>
                 <option value="септум">септум</option>
                 <option value="нострил">нострил</option>
-                <option value="пупок">пупок</option>
             </select>
-        </div>
-
-        <div class="form-group">
-            <label>кол-во проколов (макс. 3):</label>
-            <input type="number" id="count" min="1" max="3" value="1">
         </div>
 
         <div class="form-group">
@@ -45,62 +35,37 @@
             </div>
         </div>
 
-        <button class="main-button" id="submit_btn" onclick="sendData()">забронировать (300₽)</button>
+        <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
-        let selectedAge = "";
+        let selectedAge = ""; 
         tg.expand();
 
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
-            document.getElementById('age-18').classList.remove('active');
-            document.getElementById('age-under').classList.remove('active');
-            
-            if (age >= 18) {
-                document.getElementById('age-18').classList.add('active');
-                document.getElementById('age-warning').style.display = 'none';
-            } else {
-                document.getElementById('age-under').classList.add('active');
-                document.getElementById('age-warning').style.display = 'block';
-            }
-            
-            // Включаем главную кнопку телеграма
-            tg.MainButton.setText("ЗАБРОНИРОВАТЬ (300₽)");
-            tg.MainButton.show();
+            document.getElementById('age-18').classList.toggle('active', age >= 18);
+            document.getElementById('age-under').classList.toggle('active', age < 18);
         }
 
-        function collectData() {
+        function sendData() {
             const data = {
                 service: document.getElementById('service_type').value,
-                quantity: document.getElementById('count').value,
                 date: document.getElementById('order_date').value,
                 time: document.getElementById('order_time').value,
                 age: selectedAge
             };
 
             if (!selectedAge || !data.date || !data.time) {
-                tg.showAlert("заполни все поля, бро!");
-                return null;
+                tg.showAlert("хуесос заполни все поля!");
+                return;
             }
-            return JSON.stringify(data);
-        }
 
-        function sendData() {
-            const jsonData = collectData();
-            if (jsonData) {
-                tg.sendData(jsonData);
-            }
+            // пробуем отправить напрямую
+            tg.sendData(JSON.stringify(data));
         }
-
-        tg.onEvent('mainButtonClicked', function() {
-            const jsonData = collectData();
-            if (jsonData) {
-                tg.sendData(jsonData);
-            }
-        });
     </script>
 </body>
 </html>
