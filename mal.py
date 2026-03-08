@@ -3,17 +3,25 @@ import json
 import logging
 import sqlite3
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+from dotenv import load_dotenv  # 🔥 добавлено
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import WebAppInfo
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+
+# 🔥 загружаем переменные из .env
+load_dotenv()
 
 # === НАСТРОЙКИ ===
-DB_PATH = "malusko.db"
-API_TOKEN = "твои_токен_из_env"
-WEB_APP_URL = "https://maluska-webapp.vercel.app"
-ADMIN_CHANNEL_ID = -1003649793662  # твой канал
-MY_ID = 426795405  # твой id
+DB_PATH = os.getenv("DB_PATH", "malusko.db")
+API_TOKEN = os.getenv("BOT_TOKEN")  # 🔥 из .env
+WEB_APP_URL = os.getenv("WEB_APP_URL", "https://maluska-webapp.vercel.app")
+ADMIN_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "-1003649793662"))
+MY_ID = int(os.getenv("ADMIN_ID", "426795405"))
+
+# проверка токена
+if not API_TOKEN:
+    raise ValueError("❌ BOT_TOKEN не найден в .env файле!")
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
@@ -64,8 +72,6 @@ def add_user(user_id, username, first_name):
     conn.close()
 
 # === КЛАВИАТУРА ===
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🩸 ЗАПИСАТЬСЯ", web_app=WebAppInfo(url=WEB_APP_URL))]
