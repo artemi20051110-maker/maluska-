@@ -1,79 +1,57 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link rel="stylesheet" href="style.css?v=fresh_start">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
-</head>
-<body>
-<div class="container">
-<h1 class="title">МАЛЮСКА<br>ПИРСИНГ</h1>
-<div class="form-group">
-<label>твой возраст:</label>
-<div class="age-selector">
-<button type="button" class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
-<button type="button" class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
-</div>
-<p id="age-warning" class="warning" style="display: none;">нужно присутствие родителей или записка!</p>
-</div>
-<div class="form-group">
-<label>что колем?</label>
-<select id="service_type">
-<option value="мочка уха">мочка уха</option>
-<option value="хеликс">хеликс</option>
-<option value="индастриал">индастриал</option>
-<option value="септум">септум</option>
-<option value="нострил">нострил</option>
-<option value="пупок">пупок</option>
-</select>
-</div>
-<div class="form-group">
-<label>кол-во проколов (макс. 3):</label>
-<input type="number" id="count" min="1" max="3" value="1">
-</div>
-<div class="form-group">
-<label>дата и время:</label>
-<div class="datetime-row">
-<input type="date" id="order_date">
-<input type="time" id="order_time">
-</div>
-</div>
-<button class="main-button" id="submit_btn" onclick="sendData()">забронировать (300₽)</button>
-</div>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
-const tg = window.Telegram.WebApp;
-tg.expand();
+  const tg = window.Telegram.WebApp;
+  let selectedAge = ""; // ОБЯЗАТЕЛЬНО объявляем в начале
+  tg.expand();
 
-tg.onEvent('mainButtonClicked', function(){
-    const data = {
-        service: document.getElementById('service_type').value,
-        quantity: document.getElementById('count').value,
-        date: document.getElementById('order_date').value,
-        time: document.getElementById('order_time').value,
-        age: selectedAge
-    };
-    
-    // Это единственный способ отправить данные из MenuButton
-    tg.sendData(JSON.stringify(data));
-});
-
-function sendData() {
-  const data = {
-    service: document.getElementById('service_type').value,
-    quantity: document.getElementById('count').value,
-    date: document.getElementById('order_date').value,
-    time: document.getElementById('order_time').value,
-    age: selectedAge
-  };
-  if (!selectedAge || !data.date || !data.time) {
-    tg.showAlert("заполни все поля, бро!");
-    return;
+  // 1. Логика выбора возраста (БЕЗ НЕЕ СКРИПТ ПАДАЕТ)
+  function setAge(age) {
+      selectedAge = age >= 18 ? "18+" : "до 18";
+      document.getElementById('age-18').classList.remove('active');
+      document.getElementById('age-under').classList.remove('active');
+      
+      if (age >= 18) {
+          document.getElementById('age-18').classList.add('active');
+          document.getElementById('age-warning').style.display = 'none';
+      } else {
+          document.getElementById('age-under').classList.add('active');
+          document.getElementById('age-warning').style.display = 'block';
+      }
+      
+      // Показываем кнопку внизу, как только возраст выбран
+      tg.MainButton.setText("ЗАБРОНИРОВАТЬ (300₽)");
+      tg.MainButton.show();
   }
-  const jsonData = JSON.stringify(data); // Добавляем обертку JSON
-  tg.sendData(jsonData); // Отправляем JSON данные
-}
+
+  // 2. Функция сбора данных (ОДНА ДЛЯ ВСЕХ)
+  function collectData() {
+      const data = {
+          service: document.getElementById('service_type').value,
+          quantity: document.getElementById('count').value,
+          date: document.getElementById('order_date').value,
+          time: document.getElementById('order_time').value,
+          age: selectedAge
+      };
+
+      if (!selectedAge || !data.date || !data.time) {
+          tg.showAlert("заполни все поля, бро!");
+          return null;
+      }
+      return JSON.stringify(data);
+  }
+
+  // 3. Обработка нажатия на ТВОЮ кнопку (submit_btn)
+  function sendData() {
+      const jsonData = collectData();
+      if (jsonData) {
+          tg.sendData(jsonData);
+      }
+  }
+
+  // 4. Обработка нажатия на СИСТЕМНУЮ кнопку (красная полоса внизу)
+  tg.onEvent('mainButtonClicked', function() {
+      const jsonData = collectData();
+      if (jsonData) {
+          tg.sendData(jsonData);
+      }
+  });
 </script>
-</body>
-</html>
