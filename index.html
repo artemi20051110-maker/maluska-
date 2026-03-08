@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=final">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=final_fix_v2">
 </head>
 <body>
     <div class="container">
-        <h1 class="title">МАЛЮСКА<br>ПИРСИНГ</h1>
+        <h1 class="title">МАЛЮСКА</h1>
         
         <div class="form-group">
-            <label>твой возраст:</label>
+            <label>возраст:</label>
             <div class="age-selector">
                 <button type="button" class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
                 <button type="button" class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
@@ -19,23 +18,19 @@
         </div>
 
         <div class="form-group">
-            <label>что колем?</label>
+            <label>что шьем?</label>
             <select id="service_type">
-                <option value="мочка уха">мочка уха</option>
                 <option value="септум">септум</option>
                 <option value="нострил">нострил</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label>дата и время:</label>
-            <div class="datetime-row">
-                <input type="date" id="order_date">
-                <input type="time" id="order_time">
-            </div>
+            <input type="date" id="order_date">
+            <input type="time" id="order_time">
         </div>
 
-        <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
+        <button class="main-button" id="submit_btn" onclick="sendData()">забронировать</button>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -46,8 +41,8 @@
 
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
-            document.getElementById('age-18').classList.toggle('active', age >= 18);
-            document.getElementById('age-under').classList.toggle('active', age < 18);
+            document.getElementById('age-18').style.background = age >= 18 ? "red" : "#222";
+            document.getElementById('age-under').style.background = age < 18 ? "red" : "#222";
         }
 
         function sendData() {
@@ -59,12 +54,17 @@
             };
 
             if (!selectedAge || !data.date || !data.time) {
-                tg.showAlert("хуесос заполни все поля!");
+                tg.showAlert("заполни все поля!");
                 return;
             }
 
-            // пробуем отправить напрямую
-            tg.sendData(JSON.stringify(data));
+            // ВНИМАНИЕ: Если ты в MenuButton, sendData может молчать.
+            // Мы пробуем отправить, и если это сработает - окно закроется.
+            try {
+                tg.sendData(JSON.stringify(data));
+            } catch (e) {
+                tg.showAlert("ошибка отправки. попробуй через кнопку в чате.");
+            }
         }
     </script>
 </body>
