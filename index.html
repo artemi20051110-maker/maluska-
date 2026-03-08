@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css?v=vercel_v2">
+    <link rel="stylesheet" href="style.css?v=vercel_v3">
     <title>МАЛЮСКА</title>
 </head>
 <body>
@@ -68,12 +68,17 @@
                 service: service,
                 date: date,
                 time: time,
-                age: selectedAge
+                age: selectedAge,
+                username: tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || "клиент"
             };
 
             tg.sendData(JSON.stringify(data));
             setTimeout(() => tg.close(), 500);
         }
+
+        tg.onEvent('themeChanged', function() {
+            tg.setHeaderColor(tg.themeParams.bg_color || '#1a0000');
+        });
     </script>
 </body>
 </html>

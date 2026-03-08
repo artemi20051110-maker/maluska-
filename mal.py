@@ -4,125 +4,155 @@ import logging
 import sqlite3
 import os
 from datetime import datetime
-from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import WebAppInfo
 
-load_dotenv()
+# === НАСТРОЙКИ ===
+DB_PATH = "malusko.db"
+API_TOKEN = "твои_токен_из_env"
+WEB_APP_URL = "https://maluska-webapp.vercel.app"
+ADMIN_CHANNEL_ID = -1003649793662  # твой канал
+MY_ID = 426795405  # твой id
 
-TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID"))
-LOG_CHANNEL = os.getenv("LOG_CHANNEL_ID")
-
-bot = Bot(token=TOKEN)
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
-
-# 🔥 ВАЖНО: включаем подробные логи
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# === БАЗА ДАННЫХ ===
 def init_db():
-    conn = sqlite3.connect("malusko.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users 
-        (user_id INTEGER PRIMARY KEY, username TEXT, first_name TEXT)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS bookings 
-        (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, service TEXT, 
-        date TEXT, time TEXT, age_group TEXT, created_at TEXT)''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            first_name TEXT,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            user_name TEXT,
+            service TEXT,
+            booking_date TEXT,
+            booking_time TEXT,
+            age_group TEXT,
+            status TEXT DEFAULT 'pending',
+            admin_msg_id INTEGER
+        )
+    ''')
+    
     conn.commit()
     conn.close()
-    logger.info("база данных инициализирована")
+    logger.info("✅ БАЗА ГОТОВА")
 
+def add_user(user_id, username, first_name):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR IGNORE INTO users (user_id, username, first_name)
+        VALUES (?, ?, ?)
+    ''', (user_id, username, first_name))
+    cursor.execute('UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE user_id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+
+# === КЛАВИАТУРА ===
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
+main_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="🩸 ЗАПИСАТЬСЯ", web_app=WebAppInfo(url=WEB_APP_URL))]
+    ],
+    resize_keyboard=True
+)
+
+# === ЛОГИКА ===
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    logger.info(f"команда /start от пользователя {message.from_user.id}")
+    add_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
     
-    conn = sqlite3.connect("malusko.db")
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO users VALUES (?,?,?)",
-                   (message.from_user.id, message.from_user.username, message.from_user.first_name))
-    conn.commit()
-    conn.close()
-
     await bot.set_chat_menu_button(
         chat_id=message.chat.id,
         menu_button=types.MenuButtonWebApp(
             text="записаться",
-            web_app=WebAppInfo(url="https://maluska.vercel.app")
+            web_app=WebAppInfo(url=WEB_APP_URL)
         )
     )
-    await message.answer("привет! нажми на кнопку в меню слева, чтобы записаться.")
-    logger.info(f"меню кнопка установлена для чата {message.chat.id}")
+    
+    await message.answer(
+        "привет! это запись к малюске на пирсинг.\n"
+        "жми кнопку 🩸 ЗАПИСАТЬСЯ или меню слева",
+        reply_markup=main_kb
+    )
+    logger.info(f"📩 /start от {message.from_user.id}")
 
 @dp.message(F.web_app_data)
-async def handle_data(message: types.Message):
-    logger.info(f"🔥 ПОЛУЧЕНЫ WEB_APP_DATA от {message.from_user.id}")
+async def web_app_handler(message: types.Message):
+    logger.info(f"🔥🔥🔥 WEB_APP_DATA ПОЛУЧЕНЫ от {message.from_user.id}")
     logger.info(f"сырые данные: {message.web_app_data.data}")
     
     try:
         data = json.loads(message.web_app_data.data)
         logger.info(f"распарсенные данные: {data}")
         
+        user_name = data.get('username', message.from_user.first_name or 'клиент')
+        
+        report = (
+            f"🩸 НОВАЯ ЗАЯВКА\n\n"
+            f"КЛИЕНТ: @{message.from_user.username or 'без_ника'}\n"
+            f"ID: {message.from_user.id}\n"
+            f"ИМЯ: {user_name}\n"
+            f"УСЛУГА: {data.get('service', '---')}\n"
+            f"ДАТА: {data.get('date', '---')} | {data.get('time', '---')}\n"
+            f"ВОЗРАСТ: {data.get('age', '---')}"
+        )
+        
+        # отправляем в канал
+        sent_msg = await bot.send_message(chat_id=ADMIN_CHANNEL_ID, text=report)
+        logger.info(f"✅ отправлено в канал, msg_id={sent_msg.message_id}")
+        
         # сохраняем в базу
-        conn = sqlite3.connect("malusko.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute('''INSERT INTO bookings 
-            (user_id, service, date, time, age_group, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?)''',
-            (message.from_user.id, 
-             data.get('service', 'неизвестно'),
-             data.get('date', 'неизвестно'),
-             data.get('time', 'неизвестно'),
-             data.get('age', 'неизвестно'),
-             datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-        booking_id = cursor.lastrowid
+        cursor.execute('''
+            INSERT INTO bookings (user_id, user_name, service, booking_date, booking_time, age_group, admin_msg_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            message.from_user.id,
+            user_name,
+            data.get('service'),
+            data.get('date'),
+            data.get('time'),
+            data.get('age'),
+            sent_msg.message_id
+        ))
         conn.commit()
         conn.close()
-        logger.info(f"запись сохранена в базу с id={booking_id}")
+        logger.info(f"✅ сохранено в базу")
         
-        report = (f"🩸 НОВАЯ ЗАЯВКА #{booking_id}\n"
-                  f"Клиент: @{message.from_user.username or 'без_юзернейма'}\n"
-                  f"ID: {message.from_user.id}\n"
-                  f"Услуга: {data.get('service', 'неизвестно')}\n"
-                  f"Дата/время: {data.get('date', '?')} в {data.get('time', '?')}\n"
-                  f"Возраст: {data.get('age', '?')}")
-        
-        logger.info(f"отправляю отчёт админу {ADMIN_ID}")
-        await bot.send_message(ADMIN_ID, report)
-        logger.info("отчёт отправлен админу")
-        
-        if LOG_CHANNEL:
-            try:
-                await bot.send_message(LOG_CHANNEL, report)
-                logger.info("отчёт отправлен в лог-канал")
-            except Exception as e:
-                logger.error(f"ошибка отправки в лог-канал: {e}")
-        
-        await message.answer("✅ данные отправлены мастеру. жди подтверждения!")
-        logger.info("ответ пользователю отправлен")
+        # ответ пользователю
+        await message.answer(f"✅ принято, {user_name}! заявка ушла мастеру.")
+        logger.info("✅ ответ пользователю отправлен")
         
     except Exception as e:
-        logger.error(f"🔥 ОШИБКА обработки данных: {e}", exc_info=True)
-        await message.answer(f"❌ ошибка при отправке: {str(e)}\nнапиши мастеру вручную.")
-
-@dp.message(F.text)
-async def forward_to_admin(message: types.Message):
-    if message.from_user.id != ADMIN_ID:
-        logger.info(f"сообщение от {message.from_user.id} пересылается админу")
-        await bot.send_message(
-            ADMIN_ID, 
-            f"сообщение от @{message.from_user.username or 'без_юзернейма'}:\n\n{message.text}"
-        )
+        logger.error(f"❌ ОШИБКА WebApp: {e}", exc_info=True)
+        await message.answer(f"❌ траблы с сигналом... попробуй ещё раз или напиши мастеру.")
 
 async def main():
-    logger.info("запуск бота...")
+    logger.info("🚀 ЗАПУСК БОТА...")
     init_db()
-    logger.info(f"ADMIN_ID={ADMIN_ID}, LOG_CHANNEL={LOG_CHANNEL}")
+    logger.info(f"ADMIN_CHANNEL_ID={ADMIN_CHANNEL_ID}, MY_ID={MY_ID}")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("бот остановлен")
