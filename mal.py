@@ -52,7 +52,7 @@ async def start(message: types.Message):
         chat_id=message.chat.id,
         menu_button=types.MenuButtonWebApp(
             text="записаться",
-            web_app=WebAppInfo(url="https://artemi20051110-maker.github.io/maluska-/")
+            web_app=WebAppInfo(url="https://maluska.vercel.app")
         )
     )
     await message.answer("привет! нажми на кнопку в меню слева, чтобы записаться.")
