@@ -45,7 +45,6 @@ h1.title {
     letter-spacing: 3px;
 }
 
-/* ТАБЫ */
 .tabs {
     display: flex;
     gap: 10px;
@@ -79,7 +78,6 @@ h1.title {
     display: block;
 }
 
-/* ФОРМЫ */
 .form-group {
     margin-bottom: 15px;
 }
@@ -100,7 +98,6 @@ label {
     font-weight: 400;
 }
 
-/* ВОЗРАСТ */
 .age-selector {
     display: flex;
     gap: 10px;
@@ -125,7 +122,6 @@ label {
     background: linear-gradient(135deg, #330000, #1a0000);
 }
 
-/* ВЫБОРЫ */
 select {
     width: 100%;
     padding: 12px;
@@ -142,11 +138,12 @@ select:focus {
     border-color: #cc3333;
 }
 
-/* КАЛЕНДАРЬ */
+/* 🔥 КАЛЕНДАРЬ - ИСПРАВЛЕННЫЙ */
 .calendar-wrapper {
     overflow-x: auto;
     padding-bottom: 5px;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
 }
 
 .calendar-wrapper::-webkit-scrollbar {
@@ -166,7 +163,8 @@ select:focus {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 4px;
-    min-width: 320px;
+    min-width: 300px;
+    width: 100%;
 }
 
 .cal-day-name {
@@ -229,7 +227,6 @@ select:focus {
     margin-top: 2px;
 }
 
-/* ВРЕМЯ */
 .time-note {
     font-size: 10px;
     color: #ff6666;
@@ -237,7 +234,6 @@ select:focus {
     text-align: center;
 }
 
-/* КНОПКА */
 .main-button {
     background: linear-gradient(135deg, #cc3333, #990000);
     color: #fff;
@@ -258,7 +254,6 @@ select:focus {
     transform: translateY(0);
 }
 
-/* ПРАЙС */
 .price-section {
     margin-bottom: 15px;
 }

@@ -14,7 +14,7 @@ load_dotenv()
 # === НАСТРОЙКИ ===
 DB_PATH = os.getenv("DB_PATH", "malusko.db")
 API_TOKEN = os.getenv("BOT_TOKEN")
-WEB_APP_URL = os.getenv("WEB_APP_URL", "https://maluska.vercel.app")
+WEB_APP_URL = os.getenv("WEB_APP_URL", "https://maluska.vercel.app")  # 🔥 без пробелов!
 ADMIN_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "-1003649793662"))
 MY_ID = int(os.getenv("ADMIN_ID", "426795405"))
 PAYMENT_QR_PATH = "payment_qr.png"
@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 # === БАЗА ДАННЫХ ===
 def init_db():
-    """только создаёт таблицы, ничего больше!"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
@@ -76,7 +75,6 @@ def add_user(user_id, username, first_name):
     conn.close()
 
 def is_slot_available(date, time):
-    """проверяет свободен ли слот"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
@@ -118,21 +116,18 @@ async def start(message: types.Message):
 
 @dp.message(F.web_app_data)
 async def web_app_handler(message: types.Message):
-    """обработка данных из веб-апп"""
     logger.info(f"🔥 WEB_APP_DATA от {message.from_user.id}")
     
     try:
         data = json.loads(message.web_app_data.data)
         logger.info(f"распарсенные данные: {data}")
         
-        # проверка свободного слота
         if not is_slot_available(data.get('date'), data.get('time')):
             await message.answer("❌ это время уже занято! выбери другое.")
             return
         
         user_name = data.get('username', message.from_user.first_name or 'клиент')
         
-        # сохраняем в базу
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
@@ -152,7 +147,6 @@ async def web_app_handler(message: types.Message):
         conn.close()
         logger.info(f"✅ сохранено в базу id={booking_id}")
         
-        # отправляем QR
         try:
             with open(PAYMENT_QR_PATH, 'rb') as qr_file:
                 await bot.send_photo(
@@ -170,11 +164,10 @@ async def web_app_handler(message: types.Message):
             logger.error(f"QR файл не найден: {PAYMENT_QR_PATH}")
             await message.answer(
                 f"✅ бронь #{booking_id} создана!\n\n"
-                f"💰 оплати {BOOKING_FEE}₽ (QR не найден, напиши мастеру)\n\n"
+                f"💰 оплати {BOOKING_FEE}₽ (QR не найден)\n\n"
                 f"⏰ отправь чек в этот чат!"
             )
         
-        # уведомление админу
         report = (
             f"🩸 НОВАЯ БРОНЬ #{booking_id}\n"
             f"Клиент: @{message.from_user.username}\n"
@@ -191,7 +184,6 @@ async def web_app_handler(message: types.Message):
 
 @dp.message(F.text)
 async def handle_user_messages(message: types.Message):
-    """пересылает все сообщения админу"""
     if message.from_user.id == MY_ID:
         return
     
@@ -205,7 +197,6 @@ async def handle_user_messages(message: types.Message):
 
 @dp.message(F.photo)
 async def handle_receipt(message: types.Message):
-    """обрабатывает фото и чеки"""
     if message.from_user.id == MY_ID:
         return
     

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=maluska_v4">
+    <link rel="stylesheet" href="style.css?v=maluska_final_fix">
     <title>МАЛЮСКА | ЗАПИСЬ</title>
 </head>
 <body>
@@ -100,6 +100,7 @@
         </div>
     </div>
 
+    <!-- 🔥 БЕЗ ПРОБЕЛОВ В URL -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
@@ -121,7 +122,6 @@
             }
             html += '</div><div class="calendar-days">';
 
-            // 60 дней вместо 14
             for (let i = 0; i < 60; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() + i);
