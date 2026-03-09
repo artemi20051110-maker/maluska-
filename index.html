@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css?v=maluska_v2">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="style.css?v=maluska_final">
     <title>МАЛЮСКА | ЗАПИСЬ</title>
 </head>
 <body>
@@ -22,7 +22,7 @@
             
             <!-- возраст -->
             <div class="form-group">
-                <label>возраст:</label>
+                <label>→ возраст:</label>
                 <div class="age-selector">
                     <button type="button" class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
                     <button type="button" class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
@@ -31,7 +31,7 @@
 
             <!-- услуга -->
             <div class="form-group">
-                <label>услуга:</label>
+                <label>→ услуга:</label>
                 <select id="service_type">
                     <optgroup label="нос">
                         <option value="септум">септум — 1500₽</option>
@@ -56,18 +56,21 @@
                 </select>
             </div>
 
-            <!-- КАЛЕНДАРЬ -->
+            <!-- КАЛЕНДАРЬ (компактный) -->
             <div class="form-group">
-                <label>дата:</label>
-                <div class="calendar-grid" id="calendar"></div>
+                <label>→ дата:</label>
+                <div class="calendar-wrapper">
+                    <div class="calendar-grid" id="calendar"></div>
+                </div>
             </div>
 
             <!-- время -->
             <div class="form-group">
-                <label>время:</label>
+                <label>→ время:</label>
                 <select id="order_time">
-                    <option value="">сначала выбери дату</option>
+                    <option value="">выбери дату сначала</option>
                 </select>
+                <p class="time-note" id="time-note"></p>
             </div>
 
             <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
@@ -111,7 +114,10 @@
         let selectedDate = "";
         tg.expand();
 
-        // генерация календаря
+        // рабочие часы
+        const WORKING_HOURS = ["16:00", "17:00", "18:00", "19:00", "20:00"];
+
+        // генерация календаря (14 дней вместо 21)
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
             const today = new Date();
@@ -124,7 +130,8 @@
             }
             html += '</div><div class="calendar-days">';
 
-            for (let i = 0; i < 21; i++) {
+            // только 14 дней вперёд (компактно)
+            for (let i = 0; i < 14; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() + i);
                 
@@ -138,48 +145,15 @@
                     <div class="cal-day ${isToday ? 'today' : ''}" 
                          data-date="${dateStr}" 
                          onclick="selectDate('${dateStr}')">
-                        <div class="cal-day-name">${dayName}</div>
+                        <div class="cal-day-name-short">${dayName}</div>
                         <div class="cal-day-num">${dayNum}</div>
                         <div class="cal-day-month">${month}</div>
-                        <div class="cal-status" id="status-${dateStr}">...</div>
+                        <div class="cal-status" id="status-${dateStr}">●</div>
                     </div>
                 `;
             }
             html += '</div>';
             calendar.innerHTML = html;
-            
-            // загружаем доступные слоты
-            loadAvailableSlots();
-        }
-
-        // загрузка слотов
-        async function loadAvailableSlots() {
-            const days = document.querySelectorAll('.cal-day');
-            for (let day of days) {
-                const date = day.dataset.date;
-                const statusEl = document.getElementById(`status-${date}`);
-                
-                try {
-                    const response = await fetch(`/api/slots?date=${date}`);
-                    const data = await response.json();
-                    const available = data.available || 0;
-                    
-                    if (available === 0) {
-                        statusEl.textContent = 'нет мест';
-                        statusEl.className = 'cal-status full';
-                        day.style.opacity = '0.5';
-                    } else if (available <= 2) {
-                        statusEl.textContent = `${available} места`;
-                        statusEl.className = 'cal-status low';
-                    } else {
-                        statusEl.textContent = 'свободно';
-                        statusEl.className = 'cal-status free';
-                    }
-                } catch (e) {
-                    statusEl.textContent = 'свободно';
-                    statusEl.className = 'cal-status free';
-                }
-            }
         }
 
         // выбор даты
@@ -188,30 +162,15 @@
             document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
             document.querySelector(`[data-date="${date}"]`).classList.add('selected');
             
-            // загружаем время
-            loadTimeSlots(date);
-        }
-
-        // загрузка времени
-        async function loadTimeSlots(date) {
+            // показываем все часы (проверка на сервере)
             const timeSelect = document.getElementById('order_time');
-            timeSelect.innerHTML = '<option value="">загрузка...</option>';
+            const note = document.getElementById('time-note');
             
-            try {
-                const response = await fetch(`/api/slots?date=${date}`);
-                const data = await response.json();
-                const slots = data.slots || [];
-                
-                if (slots.length === 0) {
-                    timeSelect.innerHTML = '<option value="">нет свободных мест</option>';
-                } else {
-                    timeSelect.innerHTML = slots.map(slot => 
-                        `<option value="${slot}">${slot}</option>`
-                    ).join('');
-                }
-            } catch (e) {
-                timeSelect.innerHTML = '<option value="">ошибка загрузки</option>';
-            }
+            timeSelect.innerHTML = '<option value="">выбери время</option>' + 
+                WORKING_HOURS.map(slot => `<option value="${slot}">${slot}</option>`).join('');
+            
+            note.textContent = "⚠️ после отправки бот проверит доступность";
+            note.style.color = "#ff6666";
         }
 
         function setAge(age) {
@@ -255,8 +214,7 @@
                 time: time,
                 age: selectedAge,
                 username: tg.initDataUnsafe?.user?.username || "клиент",
-                user_id: tg.initDataUnsafe?.user?.id || 0,
-                action: "create_booking"
+                user_id: tg.initDataUnsafe?.user?.id || 0
             };
 
             tg.sendData(JSON.stringify(data));

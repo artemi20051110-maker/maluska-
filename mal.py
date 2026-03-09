@@ -217,7 +217,7 @@ async def web_app_handler(message: types.Message):
     try:
         data = json.loads(message.web_app_data.data)
         
-        # проверка свободного слота
+        # 🔥 ПРОВЕРКА СВОБОДНОСТИ
         if not is_slot_available(data.get('date'), data.get('time')):
             await message.answer("❌ это время уже занято! выбери другое.")
             return
@@ -243,31 +243,26 @@ async def web_app_handler(message: types.Message):
         conn.commit()
         conn.close()
         
-        # 🔥 ОТПРАВЛЯЕМ QR КАРТИНКУ + ССЫЛКУ
-        caption = (
-            f"✅ бронь #{booking_id} создана!\n\n"
-            f"📅 {data.get('date')} в {data.get('time')}\n"
-            f"💉 {data.get('service')}\n\n"
-            f"💰 для подтверждения оплати бронь {BOOKING_FEE}₽\n\n"
-            f"📲 вариант 1: наведи камеру на QR-код выше\n"
-            f"🔗 вариант 2: нажми на ссылку {PAYMENT_LINK}\n\n"
-            f"⏰ после оплаты отправь чек в этот чат!"
-        )
-        
+        # отправляем QR
         try:
             with open(PAYMENT_QR_PATH, 'rb') as qr_file:
                 await bot.send_photo(
                     chat_id=message.from_user.id,
                     photo=qr_file,
-                    caption=caption
+                    caption=(
+                        f"✅ бронь #{booking_id} создана!\n\n"
+                        f"📅 {data.get('date')} в {data.get('time')}\n"
+                        f"💉 {data.get('service')}\n\n"
+                        f"💰 оплати бронь {BOOKING_FEE}₽ по QR выше\n\n"
+                        f"⏰ после оплаты отправь чек в этот чат!"
+                    )
                 )
         except FileNotFoundError:
-            logger.error(f"❌ QR файл не найден: {PAYMENT_QR_PATH}")
-            # если картинки нет — отправляем только ссылку
-            await message.answer(caption)
-        
-        # помечаем слот как занятый
-        mark_slot_as_booked(data.get('date'), data.get('time'))
+            await message.answer(
+                f"✅ бронь #{booking_id} создана!\n\n"
+                f"💰 оплати {BOOKING_FEE}₽ (QR не найден)\n\n"
+                f"⏰ отправь чек в этот чат!"
+            )
         
         # уведомление админу
         report = (
@@ -278,11 +273,11 @@ async def web_app_handler(message: types.Message):
             f"Статус: ожидание оплаты"
         )
         await bot.send_message(ADMIN_CHANNEL_ID, report)
-        await message.answer("📲 проверь чат — там QR-код и ссылка для оплаты!")
+        await message.answer("📲 проверь чат — там QR для оплаты!")
         
     except Exception as e:
         logger.error(f"ошибка: {e}", exc_info=True)
-        await message.answer("❌ ошибка создания брони. напиши мастеру.")
+        await message.answer("❌ ошибка. напиши мастеру.")
 async def main():
     logger.info("🚀 ЗАПУСК БОТА...")
     init_db()
