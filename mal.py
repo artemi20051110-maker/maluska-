@@ -52,13 +52,16 @@ def init_db():
     
     # таблица пользователей
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            username TEXT,
-            first_name TEXT,
-            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    INSERT INTO bookings (user_id, user_name, service, booking_date, booking_time, age_group, status, payment_status)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending', 'unpaid')
+''', (
+    message.from_user.id,
+    user_name,
+    data.get('service'),
+    data.get('date'),
+    data.get('time'),
+    data.get('age')
+))
     
     # таблица бронирований с оплатой
     cursor.execute('''

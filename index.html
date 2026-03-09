@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=maluska_final">
+    <link rel="stylesheet" href="style.css?v=maluska_v4">
     <title>МАЛЮСКА | ЗАПИСЬ</title>
 </head>
 <body>
@@ -11,16 +11,13 @@
         <h1 class="title">МАЛЮСКА</h1>
         <p class="subtitle">пирсинг студия</p>
         
-        <!-- ТАБЫ -->
         <div class="tabs">
             <button class="tab-btn active" onclick="showTab('booking')">📅 запись</button>
             <button class="tab-btn" onclick="showTab('price')">💰 прайс</button>
         </div>
 
-        <!-- ВКЛАДКА ЗАПИСИ -->
         <div id="booking" class="tab-content active">
             
-            <!-- возраст -->
             <div class="form-group">
                 <label>→ возраст:</label>
                 <div class="age-selector">
@@ -29,7 +26,6 @@
                 </div>
             </div>
 
-            <!-- услуга -->
             <div class="form-group">
                 <label>→ услуга:</label>
                 <select id="service_type">
@@ -56,15 +52,13 @@
                 </select>
             </div>
 
-            <!-- КАЛЕНДАРЬ (компактный) -->
             <div class="form-group">
-                <label>→ дата:</label>
+                <label>→ дата: <span class="swipe-hint">← свайп →</span></label>
                 <div class="calendar-wrapper">
                     <div class="calendar-grid" id="calendar"></div>
                 </div>
             </div>
 
-            <!-- время -->
             <div class="form-group">
                 <label>→ время:</label>
                 <select id="order_time">
@@ -76,7 +70,6 @@
             <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
         </div>
 
-        <!-- ВКЛАДКА ПРАЙС -->
         <div id="price" class="tab-content">
             <h2>💰 ПРАЙС-ЛИСТ</h2>
             <div class="price-section">
@@ -114,10 +107,8 @@
         let selectedDate = "";
         tg.expand();
 
-        // рабочие часы
         const WORKING_HOURS = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
-        // генерация календаря (14 дней вместо 21)
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
             const today = new Date();
@@ -130,8 +121,8 @@
             }
             html += '</div><div class="calendar-days">';
 
-            // только 14 дней вперёд (компактно)
-            for (let i = 0; i < 14; i++) {
+            // 60 дней вместо 14
+            for (let i = 0; i < 60; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() + i);
                 
@@ -148,7 +139,7 @@
                         <div class="cal-day-name-short">${dayName}</div>
                         <div class="cal-day-num">${dayNum}</div>
                         <div class="cal-day-month">${month}</div>
-                        <div class="cal-status" id="status-${dateStr}">●</div>
+                        <div class="cal-status">●</div>
                     </div>
                 `;
             }
@@ -156,21 +147,18 @@
             calendar.innerHTML = html;
         }
 
-        // выбор даты
         function selectDate(date) {
             selectedDate = date;
             document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
             document.querySelector(`[data-date="${date}"]`).classList.add('selected');
             
-            // показываем все часы (проверка на сервере)
             const timeSelect = document.getElementById('order_time');
             const note = document.getElementById('time-note');
             
             timeSelect.innerHTML = '<option value="">выбери время</option>' + 
                 WORKING_HOURS.map(slot => `<option value="${slot}">${slot}</option>`).join('');
             
-            note.textContent = "⚠️ после отправки бот проверит доступность";
-            note.style.color = "#ff6666";
+            note.textContent = "⚠️ бот проверит доступность после отправки";
         }
 
         function setAge(age) {
@@ -220,7 +208,6 @@
             tg.sendData(JSON.stringify(data));
         }
 
-        // инициализация
         generateCalendar();
 
         tg.onEvent('themeChanged', function() {
