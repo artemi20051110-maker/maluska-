@@ -201,3 +201,158 @@ background: #222; }
     transform: translateY(-50%);
     color: #ff3333;
 }
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    background: #222;
+    border: 2px solid #444;
+    color: #fff;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tab-btn.active {
+    border-color: #ff3333;
+    background: linear-gradient(135deg, #330000, #1a0000);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* КАЛЕНДАРЬ */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.calendar-header {
+    display: contents;
+}
+
+.cal-day-name {
+    text-align: center;
+    font-size: 10px;
+    color: #ff6666;
+    padding: 5px;
+    text-transform: uppercase;
+}
+
+.calendar-days {
+    display: contents;
+}
+
+.cal-day {
+    background: #222;
+    border: 2px solid #444;
+    border-radius: 8px;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.cal-day:hover {
+    border-color: #ff6666;
+    transform: translateY(-2px);
+}
+
+.cal-day.selected {
+    border-color: #ff3333;
+    background: linear-gradient(135deg, #330000, #1a0000);
+    box-shadow: 0 0 15px rgba(255, 51, 51, 0.5);
+}
+
+.cal-day.today {
+    border-color: #ff3333;
+}
+
+.cal-day-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.cal-day-month {
+    font-size: 10px;
+    color: #ff6666;
+    text-transform: uppercase;
+}
+
+.cal-status {
+    font-size: 8px;
+    margin-top: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.cal-status.free {
+    background: rgba(0, 255, 0, 0.2);
+    color: #00ff00;
+}
+
+.cal-status.low {
+    background: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+}
+
+.cal-status.full {
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff0000;
+}
+
+/* ПРАЙС */
+.price-section {
+    margin-bottom: 20px;
+}
+
+.price-section h3 {
+    color: #ff3333;
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #333;
+    font-size: 13px;
+}
+
+.price-item span:last-child {
+    color: #ff3333;
+    font-weight: 700;
+}
+
+.note {
+    font-size: 11px;
+    color: #ff6666;
+    text-align: center;
+    margin-top: 20px;
+    padding: 10px;
+    background: rgba(255, 51, 51, 0.1);
+    border-radius: 6px;
+}

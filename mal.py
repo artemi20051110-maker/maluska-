@@ -8,10 +8,26 @@ from dotenv import load_dotenv  # 🔥 добавлено
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+import qrcode
+from io import BytesIO
+
+def generate_qr_photo(payment_url):
+    """генерирует QR-код в память"""
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(payment_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    bio = BytesIO()
+    img.save(bio, format='PNG')
+    bio.seek(0)
+    return bio
 
 # 🔥 загружаем переменные из .env
 load_dotenv()
-
+# === ОПЛАТА ===
+PAYMENT_QR_PATH = "payment_qr.png"  # 🔥 путь к файлу с QR
+BOOKING_FEE = 300  # сумма брони
 # === НАСТРОЙКИ ===
 DB_PATH = os.getenv("DB_PATH", "malusko.db")
 API_TOKEN = os.getenv("BOT_TOKEN")  # 🔥 из .env
@@ -33,6 +49,7 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
+    # таблица пользователей
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
@@ -42,23 +59,33 @@ def init_db():
         )
     ''')
     
-    # 🔥 добавляем колонку last_seen если её нет
-    try:
-        cursor.execute('ALTER TABLE users ADD COLUMN last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
-    except sqlite3.OperationalError:
-        pass  # колонка уже есть
-    
+    # таблица бронирований с оплатой
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS bookings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             user_name TEXT,
+            username TEXT,
             service TEXT,
             booking_date TEXT,
             booking_time TEXT,
             age_group TEXT,
-            status TEXT DEFAULT 'pending',
-            admin_msg_id INTEGER
+            status TEXT DEFAULT 'pending',  -- pending, paid, confirmed, cancelled
+            payment_status TEXT DEFAULT 'unpaid',  -- unpaid, paid, verified
+            payment_receipt_id TEXT,  -- id фото чека
+            admin_msg_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # таблица слотов (рабочие дни/время)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS time_slots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            slot_date TEXT,
+            slot_time TEXT,
+            is_available INTEGER DEFAULT 1,
+            UNIQUE(slot_date, slot_time)
         )
     ''')
     
@@ -84,6 +111,83 @@ main_kb = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True
 )
+# === РАБОЧИЕ СЛОТЫ (настрой под мастера) ===
+WORKING_DAYS = [0, 1, 2, 3, 4, 5, 6]  # 0=пн, 6=вс (все дни)
+WORKING_HOURS = ["16:00", "17:00", "18:00", "19:00", "20:00"]  # твои окна
+DAYS_AHEAD = 30  # сколько дней вперёд показывать
+
+def generate_time_slots():
+    """создаёт слоты на N дней вперёд"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    from datetime import datetime, timedelta
+    today = datetime.now()
+    
+    for i in range(DAYS_AHEAD):
+        date = (today + timedelta(days=i)).strftime('%Y-%m-%d')
+        day_of_week = (today + timedelta(days=i)).weekday()
+        
+        if day_of_week in WORKING_DAYS:
+            for time_slot in WORKING_HOURS:
+                try:
+                    cursor.execute('''
+                        INSERT OR IGNORE INTO time_slots (slot_date, slot_time, is_available)
+                        VALUES (?, ?, 1)
+                    ''', (date, time_slot))
+                except:
+                    pass
+    
+    conn.commit()
+    conn.close()
+
+def get_available_slots(date):
+    """возвращает свободные слоты на дату"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # проверяем есть ли слоты в базе
+    cursor.execute('''
+        SELECT slot_time FROM time_slots 
+        WHERE slot_date = ? AND is_available = 1
+    ''', (date,))
+    available = [row[0] for row in cursor.fetchall()]
+    
+    # если слотов нет в базе — проверяем брони
+    if not available:
+        cursor.execute('''
+            SELECT booking_time FROM bookings 
+            WHERE booking_date = ? AND status NOT IN ('cancelled')
+        ''', (date,))
+        booked = [row[0] for row in cursor.fetchall()]
+        available = [slot for slot in WORKING_HOURS if slot not in booked]
+    
+    conn.close()
+    return available
+
+def is_slot_available(date, time):
+    """проверяет свободен ли конкретный слот"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id FROM bookings 
+        WHERE booking_date = ? AND booking_time = ? 
+        AND status NOT IN ('cancelled')
+    ''', (date, time))
+    result = cursor.fetchone()
+    conn.close()
+    return result is None
+
+def mark_slot_as_booked(date, time):
+    """помечает слот как занятый"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE time_slots SET is_available = 0 
+        WHERE slot_date = ? AND slot_time = ?
+    ''', (date, time))
+    conn.commit()
+    conn.close()
 
 # === ЛОГИКА ===
 @dp.message(Command("start"))
@@ -107,55 +211,77 @@ async def start(message: types.Message):
 
 @dp.message(F.web_app_data)
 async def web_app_handler(message: types.Message):
-    logger.info(f"🔥🔥🔥 WEB_APP_DATA ПОЛУЧЕНЫ от {message.from_user.id}")
-    logger.info(f"сырые данные: {message.web_app_data.data}")
+    logger.info(f"🔥 WEB_APP_DATA от {message.from_user.id}")
     
     try:
         data = json.loads(message.web_app_data.data)
-        logger.info(f"распарсенные данные: {data}")
+        
+        # 🔥 ПРОВЕРКА СВОБОДНОСТИ СЛОТА
+        if not is_slot_available(data.get('date'), data.get('time')):
+            await message.answer("❌ это время уже занято! выбери другое.")
+            return
         
         user_name = data.get('username', message.from_user.first_name or 'клиент')
-        
-        report = (
-            f"🩸 НОВАЯ ЗАЯВКА\n\n"
-            f"КЛИЕНТ: @{message.from_user.username or 'без_ника'}\n"
-            f"ID: {message.from_user.id}\n"
-            f"ИМЯ: {user_name}\n"
-            f"УСЛУГА: {data.get('service', '---')}\n"
-            f"ДАТА: {data.get('date', '---')} | {data.get('time', '---')}\n"
-            f"ВОЗРАСТ: {data.get('age', '---')}"
-        )
-        
-        # отправляем в канал
-        sent_msg = await bot.send_message(chat_id=ADMIN_CHANNEL_ID, text=report)
-        logger.info(f"✅ отправлено в канал, msg_id={sent_msg.message_id}")
         
         # сохраняем в базу
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT INTO bookings (user_id, user_name, service, booking_date, booking_time, age_group, admin_msg_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO bookings (user_id, user_name, username, service, booking_date, booking_time, age_group, status, payment_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')
         ''', (
             message.from_user.id,
             user_name,
+            message.from_user.username,
             data.get('service'),
             data.get('date'),
             data.get('time'),
-            data.get('age'),
-            sent_msg.message_id
+            data.get('age')
         ))
+        booking_id = cursor.lastrowid
         conn.commit()
         conn.close()
-        logger.info(f"✅ сохранено в базу")
         
-        # ответ пользователю
-        await message.answer(f"✅ принято, {user_name}! заявка ушла мастеру.")
-        logger.info("✅ ответ пользователю отправлен")
+        # 🔥 ОТПРАВЛЯЕМ QR-КОД КАРТИНКОЙ
+        try:
+            with open(PAYMENT_QR_PATH, 'rb') as qr_file:
+                await bot.send_photo(
+                    chat_id=message.from_user.id,
+                    photo=qr_file,
+                    caption=(
+                        f"✅ бронь #{booking_id} создана!\n\n"
+                        f"📅 {data.get('date')} в {data.get('time')}\n"
+                        f"💉 {data.get('service')}\n\n"
+                        f"💰 для подтверждения оплати бронь {BOOKING_FEE}₽\n\n"
+                        f"📲 наведи камеру на QR-код выше или отсканируй в приложении банка\n\n"
+                        f"⏰ после оплаты отправь чек в этот чат!"
+                    )
+                )
+        except FileNotFoundError:
+            logger.error(f"QR файл не найден: {PAYMENT_QR_PATH}")
+            await message.answer(
+                f"✅ бронь #{booking_id} создана!\n\n"
+                f"💰 оплати {BOOKING_FEE}₽ по ссылке: {PAYMENT_QR_PATH}\n\n"
+                f"⏰ после оплаты отправь чек в этот чат!"
+            )
+        
+        # 🔥 помечаем слот как занятый
+        mark_slot_as_booked(data.get('date'), data.get('time'))
+        
+        # уведомление админу
+        report = (
+            f"🩸 НОВАЯ БРОНЬ #{booking_id}\n"
+            f"Клиент: @{message.from_user.username}\n"
+            f"Дата: {data.get('date')} {data.get('time')}\n"
+            f"Услуга: {data.get('service')}\n"
+            f"Статус: ожидание оплаты"
+        )
+        await bot.send_message(ADMIN_CHANNEL_ID, report)
+        await message.answer("📲 проверь чат — там QR-код для оплаты!")
         
     except Exception as e:
-        logger.error(f"❌ ОШИБКА WebApp: {e}", exc_info=True)
-        await message.answer(f"❌ траблы с сигналом... попробуй ещё раз или напиши мастеру.")
+        logger.error(f"ошибка: {e}", exc_info=True)
+        await message.answer("❌ ошибка создания брони. напиши мастеру.")
 
 async def main():
     logger.info("🚀 ЗАПУСК БОТА...")

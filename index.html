@@ -3,45 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css?v=vercel_v3">
-    <title>МАЛЮСКА</title>
+    <link rel="stylesheet" href="style.css?v=maluska_v2">
+    <title>МАЛЮСКА | ЗАПИСЬ</title>
 </head>
 <body>
     <div class="container">
         <h1 class="title">МАЛЮСКА</h1>
+        <p class="subtitle">пирсинг студия</p>
         
-        <div class="form-group">
-            <label>возраст:</label>
-            <div class="age-selector">
-                <button type="button" class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
-                <button type="button" class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
+        <!-- ТАБЫ -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('booking')">📅 запись</button>
+            <button class="tab-btn" onclick="showTab('price')">💰 прайс</button>
+        </div>
+
+        <!-- ВКЛАДКА ЗАПИСИ -->
+        <div id="booking" class="tab-content active">
+            
+            <!-- возраст -->
+            <div class="form-group">
+                <label>возраст:</label>
+                <div class="age-selector">
+                    <button type="button" class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
+                    <button type="button" class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
+                </div>
             </div>
+
+            <!-- услуга -->
+            <div class="form-group">
+                <label>услуга:</label>
+                <select id="service_type">
+                    <optgroup label="нос">
+                        <option value="септум">септум — 1500₽</option>
+                        <option value="нострил">нострил — 1200₽</option>
+                        <option value="бридж">бридж — 1800₽</option>
+                    </optgroup>
+                    <optgroup label="уши">
+                        <option value="мочка">мочка — 800₽</option>
+                        <option value="хрящ">хрящ — 1200₽</option>
+                        <option value="индастриал">индастриал — 2000₽</option>
+                        <option value="трагус">трагус — 1500₽</option>
+                        <option value="дейс">дейс — 1800₽</option>
+                    </optgroup>
+                    <optgroup label="лицо">
+                        <option value="бровь">бровь — 1200₽</option>
+                        <option value="губа">губа — 1500₽</option>
+                        <option value="язык">язык — 2000₽</option>
+                    </optgroup>
+                    <optgroup label="пупок">
+                        <option value="пупок">пупок — 2000₽</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- КАЛЕНДАРЬ -->
+            <div class="form-group">
+                <label>дата:</label>
+                <div class="calendar-grid" id="calendar"></div>
+            </div>
+
+            <!-- время -->
+            <div class="form-group">
+                <label>время:</label>
+                <select id="order_time">
+                    <option value="">сначала выбери дату</option>
+                </select>
+            </div>
+
+            <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
         </div>
 
-        <div class="form-group">
-            <label>что шьем?</label>
-            <select id="service_type">
-                <option value="септум">септум</option>
-                <option value="нострил">нострил</option>
-            </select>
+        <!-- ВКЛАДКА ПРАЙС -->
+        <div id="price" class="tab-content">
+            <h2>💰 ПРАЙС-ЛИСТ</h2>
+            <div class="price-section">
+                <h3>👃 нос</h3>
+                <div class="price-item"><span>септум</span><span>1500₽</span></div>
+                <div class="price-item"><span>нострил</span><span>1200₽</span></div>
+                <div class="price-item"><span>бридж</span><span>1800₽</span></div>
+            </div>
+            <div class="price-section">
+                <h3>👂 уши</h3>
+                <div class="price-item"><span>мочка</span><span>800₽</span></div>
+                <div class="price-item"><span>хрящ</span><span>1200₽</span></div>
+                <div class="price-item"><span>индастриал</span><span>2000₽</span></div>
+                <div class="price-item"><span>трагус</span><span>1500₽</span></div>
+                <div class="price-item"><span>дейс</span><span>1800₽</span></div>
+            </div>
+            <div class="price-section">
+                <h3>😊 лицо</h3>
+                <div class="price-item"><span>бровь</span><span>1200₽</span></div>
+                <div class="price-item"><span>губа</span><span>1500₽</span></div>
+                <div class="price-item"><span>язык</span><span>2000₽</span></div>
+            </div>
+            <div class="price-section">
+                <h3>💫 пупок</h3>
+                <div class="price-item"><span>пупок</span><span>2000₽</span></div>
+            </div>
+            <p class="note">* бронь 300₽ (возвращается при посещении)</p>
         </div>
-
-        <div class="form-group">
-            <input type="date" id="order_date">
-            <input type="time" id="order_time">
-        </div>
-
-        <button class="main-button" onclick="sendData()">забронировать</button>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
-        let selectedAge = ""; 
+        let selectedAge = "";
+        let selectedDate = "";
         tg.expand();
 
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('order_date').setAttribute('min', today);
+        // генерация календаря
+        function generateCalendar() {
+            const calendar = document.getElementById('calendar');
+            const today = new Date();
+            const days = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+            const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+            
+            let html = '<div class="calendar-header">';
+            for (let d of days) {
+                html += `<div class="cal-day-name">${d}</div>`;
+            }
+            html += '</div><div class="calendar-days">';
+
+            for (let i = 0; i < 21; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                const dateStr = date.toISOString().split('T')[0];
+                const dayNum = date.getDate();
+                const month = months[date.getMonth()];
+                const dayName = days[date.getDay()];
+                const isToday = i === 0;
+                
+                html += `
+                    <div class="cal-day ${isToday ? 'today' : ''}" 
+                         data-date="${dateStr}" 
+                         onclick="selectDate('${dateStr}')">
+                        <div class="cal-day-name">${dayName}</div>
+                        <div class="cal-day-num">${dayNum}</div>
+                        <div class="cal-day-month">${month}</div>
+                        <div class="cal-status" id="status-${dateStr}">...</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            calendar.innerHTML = html;
+            
+            // загружаем доступные слоты
+            loadAvailableSlots();
+        }
+
+        // загрузка слотов
+        async function loadAvailableSlots() {
+            const days = document.querySelectorAll('.cal-day');
+            for (let day of days) {
+                const date = day.dataset.date;
+                const statusEl = document.getElementById(`status-${date}`);
+                
+                try {
+                    const response = await fetch(`/api/slots?date=${date}`);
+                    const data = await response.json();
+                    const available = data.available || 0;
+                    
+                    if (available === 0) {
+                        statusEl.textContent = 'нет мест';
+                        statusEl.className = 'cal-status full';
+                        day.style.opacity = '0.5';
+                    } else if (available <= 2) {
+                        statusEl.textContent = `${available} места`;
+                        statusEl.className = 'cal-status low';
+                    } else {
+                        statusEl.textContent = 'свободно';
+                        statusEl.className = 'cal-status free';
+                    }
+                } catch (e) {
+                    statusEl.textContent = 'свободно';
+                    statusEl.className = 'cal-status free';
+                }
+            }
+        }
+
+        // выбор даты
+        function selectDate(date) {
+            selectedDate = date;
+            document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+            document.querySelector(`[data-date="${date}"]`).classList.add('selected');
+            
+            // загружаем время
+            loadTimeSlots(date);
+        }
+
+        // загрузка времени
+        async function loadTimeSlots(date) {
+            const timeSelect = document.getElementById('order_time');
+            timeSelect.innerHTML = '<option value="">загрузка...</option>';
+            
+            try {
+                const response = await fetch(`/api/slots?date=${date}`);
+                const data = await response.json();
+                const slots = data.slots || [];
+                
+                if (slots.length === 0) {
+                    timeSelect.innerHTML = '<option value="">нет свободных мест</option>';
+                } else {
+                    timeSelect.innerHTML = slots.map(slot => 
+                        `<option value="${slot}">${slot}</option>`
+                    ).join('');
+                }
+            } catch (e) {
+                timeSelect.innerHTML = '<option value="">ошибка загрузки</option>';
+            }
+        }
 
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
@@ -54,27 +225,45 @@
             }
         }
 
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
         function sendData() {
             const service = document.getElementById('service_type').value;
-            const date = document.getElementById('order_date').value;
             const time = document.getElementById('order_time').value;
 
-            if (!selectedAge || !date || !time) {
-                tg.showAlert("заполни все поля!");
+            if (!selectedAge) {
+                tg.showAlert("выбери возраст!");
+                return;
+            }
+            if (!selectedDate) {
+                tg.showAlert("выбери дату!");
+                return;
+            }
+            if (!time) {
+                tg.showAlert("выбери время!");
                 return;
             }
 
             const data = {
                 service: service,
-                date: date,
+                date: selectedDate,
                 time: time,
                 age: selectedAge,
-                username: tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || "клиент"
+                username: tg.initDataUnsafe?.user?.username || "клиент",
+                user_id: tg.initDataUnsafe?.user?.id || 0,
+                action: "create_booking"
             };
 
             tg.sendData(JSON.stringify(data));
-            setTimeout(() => tg.close(), 500);
         }
+
+        // инициализация
+        generateCalendar();
 
         tg.onEvent('themeChanged', function() {
             tg.setHeaderColor(tg.themeParams.bg_color || '#1a0000');
