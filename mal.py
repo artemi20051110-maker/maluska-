@@ -4,18 +4,30 @@ import logging
 import sqlite3
 import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv  # 🔥 ЭТО ВАЖНО
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
 
+# 🔥 ЗАГРУЖАЕМ .env ПЕРЕД ВСЕМ ОСТАЛЬНЫМ
+load_dotenv()
+
+# === ПРОВЕРКА ЧТО ТОКЕНЫ ЗАГРУЗИЛИСЬ ===
+API_TOKEN = os.getenv("BOT_TOKEN")
+if not API_TOKEN:
+    raise ValueError("❌ BOT_TOKEN не найден в .env файле!")
+
 # === НАСТРОЙКИ ===
 DB_PATH = os.getenv("DB_PATH", "malusko.db")
-API_TOKEN = os.getenv("BOT_TOKEN")
 WEB_APP_URL = os.getenv("WEB_APP_URL", "https://maluska.vercel.app")
 ADMIN_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "-1003649793662"))
 MY_ID = int(os.getenv("ADMIN_ID", "426795405"))
 PAYMENT_QR_PATH = "payment_qr.png"
 BOOKING_FEE = 300
+
+print(f"✅ токен загружен: {API_TOKEN[:20]}...")
+print(f"✅ ADMIN_ID: {MY_ID}")
+print(f"✅ канал: {ADMIN_CHANNEL_ID}")
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
@@ -53,19 +65,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
-    # добавляем колонки если их нет
-    columns_to_add = [
-        ('phone', 'TEXT'),
-        ('people', 'TEXT'),
-        ('details', 'TEXT'),
-    ]
-    
-    for col_name, col_type in columns_to_add:
-        try:
-            cursor.execute(f"ALTER TABLE bookings ADD COLUMN {col_name} {col_type}")
-        except sqlite3.OperationalError:
-            pass
     
     conn.commit()
     conn.close()
@@ -185,16 +184,6 @@ async def broadcast(message: types.Message):
     
     await message.answer(f"✅ рассылка завершена! получили {count} клиентов")
 
-@dp.message(Command("test_app"))
-async def test_app(message: types.Message):
-    if message.from_user.id != MY_ID:
-        return
-    
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="тест брони", web_app=WebAppInfo(url=f"{WEB_APP_URL}?mode=test"))]
-    ])
-    await message.answer("скрытый вход в систему бронирования:", reply_markup=kb)
-
 @dp.message(Command("bookings"))
 async def show_bookings(message: types.Message):
     if message.from_user.id != MY_ID:
@@ -220,7 +209,6 @@ async def show_bookings(message: types.Message):
     
     await message.answer(response)
 
-# === ОБРАБОТКА WEB APP ===
 @dp.message(F.web_app_data)
 async def web_app_handler(message: types.Message):
     logger.info(f"🔥 WEB_APP_DATA от {message.from_user.id}")
@@ -228,34 +216,8 @@ async def web_app_handler(message: types.Message):
     try:
         data = json.loads(message.web_app_data.data)
         
-        # обработка действий админа (подтвердить/отменить)
-        if "action" in data and data["action"] in ["confirm_booking", "cancel_booking"]:
-            b_id = data.get("booking_id")
-            
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute("SELECT admin_msg_id FROM bookings WHERE id = ?", (b_id,))
-            res = cursor.fetchone()
-            
-            new_status = "confirmed" if data["action"] == "confirm_booking" else "cancelled"
-            cursor.execute("UPDATE bookings SET status = ? WHERE id = ?", (new_status, b_id))
-            conn.commit()
-            conn.close()
-            
-            status_text = "ПОДТВЕРЖДЕНО ✅" if data["action"] == "confirm_booking" else "ОТМЕНЕНО ❌"
-            
-            if res and res[0]:
-                try:
-                    await bot.send_message(chat_id=ADMIN_CHANNEL_ID, text=status_text, reply_to_message_id=res[0])
-                except Exception as e:
-                    logger.error(f"не удалось ответить в канале: {e}")
-            
-            await message.answer(f"принято! статус брони #{b_id} обновлён")
-            return
-        
-        # новая бронь
         if not is_slot_available(data.get('date'), data.get('time')):
-            await message.answer("❌ это время уже занято! выбери другое.")
+            await message.answer("❌ время занято! выбери другое.")
             return
         
         user_name = data.get('username', message.from_user.first_name or 'клиент')
@@ -279,24 +241,21 @@ async def web_app_handler(message: types.Message):
         conn.close()
         
         report = (
-            f"🩸 НОВАЯ БРОНЬ #{booking_id}\n"
+            f"🩸 ЗАЯВКА #{booking_id}\n"
             f"Клиент: @{message.from_user.username}\n"
             f"Дата: {data.get('date')} {data.get('time')}\n"
             f"Услуга: {data.get('service')}\n"
-            f"Возраст: {data.get('age')}\n"
-            f"Статус: ожидание оплаты"
+            f"Возраст: {data.get('age')}"
         )
         
         sent_msg = await bot.send_message(ADMIN_CHANNEL_ID, report)
         
-        # сохраняем admin_msg_id для кнопок подтверждения
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("UPDATE bookings SET admin_msg_id = ? WHERE id = ?", (sent_msg.message_id, booking_id))
         conn.commit()
         conn.close()
         
-        # отправляем QR
         try:
             with open(PAYMENT_QR_PATH, 'rb') as qr_file:
                 await bot.send_photo(
@@ -332,7 +291,6 @@ async def handle_photo(message: types.Message):
     )
     await message.answer("чек отправлен на проверку! жди подтверждения")
 
-# === ФОНОВЫЕ ЗАДАЧИ ===
 async def check_reminders():
     """напоминает за 2 часа до записи"""
     while True:
