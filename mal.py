@@ -26,7 +26,8 @@ def generate_qr_photo(payment_url):
 # 🔥 загружаем переменные из .env
 load_dotenv()
 # === ОПЛАТА ===
-PAYMENT_QR_PATH = "payment_qr.png"  # 🔥 путь к файлу с QR
+PAYMENT_QR_PATH = "payment_qr.png"  # 🔥 картинка с QR
+PAYMENT_LINK = "https://tips.yandex.ru/guest/payment/7290720"  # 🔥 ссылка на оплату (дублирует QR)
 BOOKING_FEE = 300  # сумма брони
 # === НАСТРОЙКИ ===
 DB_PATH = os.getenv("DB_PATH", "malusko.db")
@@ -216,7 +217,7 @@ async def web_app_handler(message: types.Message):
     try:
         data = json.loads(message.web_app_data.data)
         
-        # 🔥 ПРОВЕРКА СВОБОДНОСТИ СЛОТА
+        # проверка свободного слота
         if not is_slot_available(data.get('date'), data.get('time')):
             await message.answer("❌ это время уже занято! выбери другое.")
             return
@@ -242,30 +243,30 @@ async def web_app_handler(message: types.Message):
         conn.commit()
         conn.close()
         
-        # 🔥 ОТПРАВЛЯЕМ QR-КОД КАРТИНКОЙ
+        # 🔥 ОТПРАВЛЯЕМ QR КАРТИНКУ + ССЫЛКУ
+        caption = (
+            f"✅ бронь #{booking_id} создана!\n\n"
+            f"📅 {data.get('date')} в {data.get('time')}\n"
+            f"💉 {data.get('service')}\n\n"
+            f"💰 для подтверждения оплати бронь {BOOKING_FEE}₽\n\n"
+            f"📲 вариант 1: наведи камеру на QR-код выше\n"
+            f"🔗 вариант 2: нажми на ссылку {PAYMENT_LINK}\n\n"
+            f"⏰ после оплаты отправь чек в этот чат!"
+        )
+        
         try:
             with open(PAYMENT_QR_PATH, 'rb') as qr_file:
                 await bot.send_photo(
                     chat_id=message.from_user.id,
                     photo=qr_file,
-                    caption=(
-                        f"✅ бронь #{booking_id} создана!\n\n"
-                        f"📅 {data.get('date')} в {data.get('time')}\n"
-                        f"💉 {data.get('service')}\n\n"
-                        f"💰 для подтверждения оплати бронь {BOOKING_FEE}₽\n\n"
-                        f"📲 наведи камеру на QR-код выше или отсканируй в приложении банка\n\n"
-                        f"⏰ после оплаты отправь чек в этот чат!"
-                    )
+                    caption=caption
                 )
         except FileNotFoundError:
-            logger.error(f"QR файл не найден: {PAYMENT_QR_PATH}")
-            await message.answer(
-                f"✅ бронь #{booking_id} создана!\n\n"
-                f"💰 оплати {BOOKING_FEE}₽ по ссылке: {PAYMENT_QR_PATH}\n\n"
-                f"⏰ после оплаты отправь чек в этот чат!"
-            )
+            logger.error(f"❌ QR файл не найден: {PAYMENT_QR_PATH}")
+            # если картинки нет — отправляем только ссылку
+            await message.answer(caption)
         
-        # 🔥 помечаем слот как занятый
+        # помечаем слот как занятый
         mark_slot_as_booked(data.get('date'), data.get('time'))
         
         # уведомление админу
@@ -277,12 +278,11 @@ async def web_app_handler(message: types.Message):
             f"Статус: ожидание оплаты"
         )
         await bot.send_message(ADMIN_CHANNEL_ID, report)
-        await message.answer("📲 проверь чат — там QR-код для оплаты!")
+        await message.answer("📲 проверь чат — там QR-код и ссылка для оплаты!")
         
     except Exception as e:
         logger.error(f"ошибка: {e}", exc_info=True)
         await message.answer("❌ ошибка создания брони. напиши мастеру.")
-
 async def main():
     logger.info("🚀 ЗАПУСК БОТА...")
     init_db()
