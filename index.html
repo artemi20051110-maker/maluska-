@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=fix33">
+    <link rel="stylesheet" href="style.css?v=fix35">
     <title>МАЛЮСКА</title>
 </head>
 <body>
@@ -77,46 +77,37 @@
         let selectedAge = "";
         let selectedDate = "";
         let selectedTime = "";
-        let bookedSlots = {}; // занятые слоты с сервера
+        let bookedSlots = {};
         tg.expand();
 
-        // 📅 РАСПИСАНИЕ (выходные и события)
+        // 📅 ВЫХОДНЫЕ И СОБЫТИЯ (обновляй здесь!)
         const staticSchedule = {
-            "2026-03-13": { status: "weekend", times: [] },
-            "2026-03-14": { status: "weekend", times: [] },
-            "2026-03-15": { status: "weekend", times: [] },
-            "2026-03-19": { status: "event", times: [], note: "интенсив" },
-            "2026-03-20": { status: "weekend", times: [] },
-            "2026-03-22": { status: "weekend", times: [], note: "тату" },
-            "2026-03-23": { status: "weekend", times: [] },
-            "2026-03-24": { status: "weekend", times: [] },
-            "2026-03-27": { status: "weekend", times: [] }
+            "2026-03-13": { status: "weekend" },
+            "2026-03-14": { status: "weekend" },
+            "2026-03-15": { status: "weekend" },
+            "2026-03-19": { status: "event", note: "интенсив" },
+            "2026-03-20": { status: "weekend" },
+            "2026-03-22": { status: "weekend", note: "тату" },
+            "2026-03-23": { status: "weekend" },
+            "2026-03-24": { status: "weekend" },
+            "2026-03-27": { status: "weekend" }
         };
 
-        // 🕐 доступные времена по умолчанию
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
-        // 🔄 ЗАГРУЗИТЬ ЗАНЯТЫЕ СЛОТЫ С СЕРВЕРА
+        // 🔄 ЗАГРУЗКА СЛОТОВ ЧЕРЕЗ API
         async function loadBookedSlots() {
             try {
-                // отправляем запрос боту
-                tg.sendData(JSON.stringify({ action: "get_slots" }));
-                
-                // слушаем ответ
-                tg.onEvent('message', (event) => {
-                    if (event.data && typeof event.data === 'string') {
-                        try {
-                            bookedSlots = JSON.parse(event.data);
-                            console.log('загружены слоты:', bookedSlots);
-                            generateCalendar(); // перерисовать календарь
-                        } catch (e) {
-                            console.error('ошибка парсинга:', e);
-                        }
-                    }
-                });
+                const response = await fetch('http://82.24.123.231:5000/slots');
+                if (response.ok) {
+                    bookedSlots = await response.json();
+                    console.log('слоты загружены:', bookedSlots);
+                }
             } catch (e) {
-                console.error('ошибка загрузки слотов:', e);
+                console.log('API недоступно, используем пустые слоты');
+                bookedSlots = {};
             }
+            generateCalendar();
         }
 
         function generateCalendar() {
@@ -138,9 +129,7 @@
                 const month = months[date.getMonth()];
                 const isToday = i === 0;
                 
-                // проверяем статичное расписание
                 const staticData = staticSchedule[dateStr];
-                // проверяем занятые слоты с сервера
                 const bookedTimes = bookedSlots[dateStr] || [];
                 
                 let statusClass = "free";
@@ -151,27 +140,18 @@
                     if (staticData.status === "weekend") statusText = "вых";
                     else if (staticData.status === "event") statusText = staticData.note || "событие";
                 } else if (bookedTimes.length >= defaultTimes.length) {
-                    // все слоты заняты
                     statusClass = "busy";
                     statusText = "нет окон";
                 } else if (bookedTimes.length > 0) {
-                    // частично занято
                     statusClass = "free";
                     statusText = (defaultTimes.length - bookedTimes.length) + " слотов";
                 } else {
-                    // свободно
                     statusClass = "free";
                     statusText = defaultTimes.length + " слотов";
                 }
                 
-                // если все слоты заняты - помечаем как busy
-                if (bookedTimes.length >= defaultTimes.length && !staticData) {
-                    statusClass = "busy";
-                    statusText = "нет окон";
-                }
-                
                 html += `<div class="cal-day ${isToday?'today':''} ${statusClass}" 
-                    data-date="${dateStr}" data-status="${statusClass}" onclick="selectDate('${dateStr}')">
+                    data-date="${dateStr}" onclick="selectDate('${dateStr}')">
                     <div class="cal-d">${dayName}</div>
                     <div class="cal-n">${dayNum}</div>
                     <div class="cal-m">${month}</div>
@@ -185,10 +165,8 @@
         function selectDate(date) {
             selectedDate = date;
             selectedTime = "";
-            
             document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
             document.querySelector(`[data-date="${date}"]`).classList.add('selected');
-            
             updateTimeSlots(date);
         }
 
@@ -202,13 +180,11 @@
             const dayName = dateObj.toLocaleDateString('ru-RU', { weekday: 'long' });
             dateText.textContent = `${dayName}, ${date}`;
             
-            // если выходной или событие - нет времени
             if (staticData && (staticData.status === "weekend" || staticData.status === "event")) {
                 container.innerHTML = '<p class="no-slots">❌ нет доступного времени</p>';
                 return;
             }
             
-            // фильтруем занятые времена
             const availableTimes = defaultTimes.filter(t => !bookedTimes.includes(t));
             
             if (availableTimes.length === 0) {
@@ -252,7 +228,7 @@
             if (!selectedDate) return tg.showAlert("выбери дату!");
             if (!selectedTime) return tg.showAlert("выбери время!");
             
-            // проверка что время ещё свободно
+            // финальная проверка
             const bookedTimes = bookedSlots[selectedDate] || [];
             if (bookedTimes.includes(selectedTime)) {
                 return tg.showAlert("❌ это время только что заняли! выбери другое");
@@ -269,7 +245,6 @@
             }));
         }
 
-        // загрузка при старте
         loadBookedSlots();
         tg.setHeaderColor('#1a0000');
         tg.setBackgroundColor('#1a0000');

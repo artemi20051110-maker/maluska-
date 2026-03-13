@@ -37,7 +37,6 @@ select { width: 100%; padding: 12px; background: #222; border: 2px solid #444; c
 
 .hint { font-size: 10px; color: #ff6666; margin-top: 5px; }
 
-/* КАЛЕНДАРЬ */
 .calendar-wrapper { overflow-x: auto; padding-bottom: 5px; }
 .calendar-wrapper::-webkit-scrollbar { height: 4px; }
 .calendar-wrapper::-webkit-scrollbar-thumb { background: #cc3333; border-radius: 2px; }
@@ -57,7 +56,6 @@ select { width: 100%; padding: 12px; background: #222; border: 2px solid #444; c
     justify-content: center;
     cursor: pointer;
     padding: 4px;
-    position: relative;
 }
 
 .cal-day.today { border-color: #cc3333; box-shadow: 0 0 10px rgba(204,51,51,0.3); }
@@ -72,7 +70,6 @@ select { width: 100%; padding: 12px; background: #222; border: 2px solid #444; c
 .cal-m { font-size: 8px; color: #ff6666; }
 .cal-status { font-size: 7px; color: #ff6666; margin-top: 2px; text-align: center; }
 
-/* ЛЕГЕНДА */
 .legend { display: flex; gap: 10px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #ff6666; }
 .dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -80,7 +77,6 @@ select { width: 100%; padding: 12px; background: #222; border: 2px solid #444; c
 .dot.busy { background: #cc3333; }
 .dot.weekend { background: #666; }
 
-/* ВРЕМЯ */
 .time-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .time-slot {
     padding: 10px 15px;
@@ -97,7 +93,6 @@ select { width: 100%; padding: 12px; background: #222; border: 2px solid #444; c
 
 #selected-date-text { color: #cc3333; font-weight: 700; }
 
-/* КНОПКА */
 .main-button {
     width: 100%;
     padding: 15px;
@@ -111,6 +106,5 @@ select { width: 100%; padding: 12px; background: #222; border: 2px solid #444; c
 }
 .main-button:active { transform: scale(0.98); }
 
-/* ПРАЙС */
 .price-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333; font-size: 12px; }
 .price-item span:last-child { color: #cc3333; font-weight: 700; }
