@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=fix31">
+    <link rel="stylesheet" href="style.css?v=fix32">
     <title>МАЛЮСКА</title>
 </head>
 <body>
@@ -39,18 +39,20 @@
             </div>
 
             <div class="form-group">
-                <label>дата (листай →):</label>
+                <label>дата:</label>
                 <div class="calendar-wrapper">
                     <div class="calendar-grid" id="calendar"></div>
                 </div>
-                <p class="hint">⚠️ после выбора даты проверь доступное время</p>
+                <div class="legend">
+                    <span class="legend-item"><span class="dot free"></span>свободно</span>
+                    <span class="legend-item"><span class="dot busy"></span>занято</span>
+                    <span class="legend-item"><span class="dot weekend"></span>выходной</span>
+                </div>
             </div>
 
             <div class="form-group">
-                <label>время:</label>
-                <select id="order_time" disabled>
-                    <option value="">сначала выбери дату</option>
-                </select>
+                <label>время на <span id="selected-date-text"></span>:</label>
+                <div class="time-slots" id="time-slots"></div>
             </div>
 
             <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
@@ -74,10 +76,35 @@
         const tg = window.Telegram.WebApp;
         let selectedAge = "";
         let selectedDate = "";
+        let selectedTime = "";
         tg.expand();
 
-        // доступные времена
-        const availableTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
+        // 📅 РАСПИСАНИЕ НА МАРТ 2026 (обновляй здесь!)
+        // format: "YYYY-MM-DD": { status: "free"|"busy"|"weekend"|"event", times: ["16:00", "17:00"...] }
+        const schedule = {
+            "2026-03-10": { status: "free", times: ["16:00", "17:00", "18:00", "19:00", "19:30"] },
+            "2026-03-11": { status: "free", times: ["16:00", "17:00", "18:00", "19:00", "19:30"] },
+            "2026-03-12": { status: "free", times: ["16:00", "17:00", "18:00", "19:00"] },
+            "2026-03-13": { status: "weekend", times: [] },
+            "2026-03-14": { status: "weekend", times: [] },
+            "2026-03-15": { status: "weekend", times: [] },
+            "2026-03-16": { status: "free", times: ["16:00", "17:00", "18:00", "19:00", "20:00"] },
+            "2026-03-17": { status: "busy", times: [] },
+            "2026-03-18": { status: "busy", times: [] },
+            "2026-03-19": { status: "event", times: [], note: "интенсив" },
+            "2026-03-20": { status: "weekend", times: [] },
+            "2026-03-21": { status: "busy", times: [] },
+            "2026-03-22": { status: "weekend", times: [], note: "тату" },
+            "2026-03-23": { status: "weekend", times: [] },
+            "2026-03-24": { status: "weekend", times: [] },
+            "2026-03-25": { status: "busy", times: [] },
+            "2026-03-26": { status: "busy", times: [] },
+            "2026-03-27": { status: "weekend", times: [] },
+            "2026-03-28": { status: "busy", times: [] },
+            "2026-03-29": { status: "free", times: ["16:00", "17:00", "18:00"] },
+            "2026-03-30": { status: "free", times: ["16:00", "17:00", "18:00"] },
+            "2026-03-31": { status: "free", times: ["16:00", "17:00", "18:00"] }
+        };
 
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
@@ -97,13 +124,30 @@
                 const dayNum = date.getDate();
                 const month = months[date.getMonth()];
                 const isToday = i === 0;
-                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 
-                html += `<div class="cal-day ${isToday?'today':''} ${isWeekend?'weekend':''}" 
-                    data-date="${dateStr}" onclick="selectDate('${dateStr}')">
+                // получаем статус из расписания
+                const dayData = schedule[dateStr];
+                let statusClass = "";
+                let statusText = "";
+                
+                if (dayData) {
+                    statusClass = dayData.status;
+                    if (dayData.status === "weekend") statusText = "вых";
+                    else if (dayData.status === "busy") statusText = "нет окон";
+                    else if (dayData.status === "event") statusText = dayData.note || "событие";
+                    else if (dayData.status === "free") statusText = dayData.times.length + " слотов";
+                } else {
+                    // если даты нет в расписании - считаем выходным
+                    statusClass = "weekend";
+                    statusText = "вых";
+                }
+                
+                html += `<div class="cal-day ${isToday?'today':''} ${statusClass}" 
+                    data-date="${dateStr}" data-status="${statusClass}" onclick="selectDate('${dateStr}')">
                     <div class="cal-d">${dayName}</div>
                     <div class="cal-n">${dayNum}</div>
                     <div class="cal-m">${month}</div>
+                    <div class="cal-status">${statusText}</div>
                 </div>`;
             }
             html += '</div>';
@@ -112,34 +156,48 @@
 
         function selectDate(date) {
             selectedDate = date;
+            selectedTime = "";
             
-            // убираем выделение со всех
             document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
-            // выделяем выбранную
             document.querySelector(`[data-date="${date}"]`).classList.add('selected');
             
-            // обновляем список времени
-            updateTimeSelect();
+            updateTimeSlots(date);
         }
 
-        function updateTimeSelect() {
-            const timeSelect = document.getElementById('order_time');
-            timeSelect.disabled = false;
+        function updateTimeSlots(date) {
+            const container = document.getElementById('time-slots');
+            const dateText = document.getElementById('selected-date-text');
+            const dayData = schedule[date];
             
-            // очищаем и добавляем времена
-            timeSelect.innerHTML = '<option value="">выбери время</option>';
-            availableTimes.forEach(time => {
-                const option = document.createElement('option');
-                option.value = time;
-                option.textContent = time;
-                timeSelect.appendChild(option);
+            // показываем дату
+            const dateObj = new Date(date);
+            const dayName = dateObj.toLocaleDateString('ru-RU', { weekday: 'long' });
+            dateText.textContent = `${dayName}, ${date}`;
+            
+            if (!dayData || dayData.status === "weekend" || dayData.status === "busy" || dayData.times.length === 0) {
+                container.innerHTML = '<p class="no-slots">❌ нет доступного времени</p>';
+                return;
+            }
+            
+            let html = '';
+            dayData.times.forEach(time => {
+                html += `<button class="time-slot" onclick="selectTime('${time}')">${time}</button>`;
             });
+            container.innerHTML = html;
+        }
+
+        function selectTime(time) {
+            selectedTime = time;
+            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+            event.target.classList.add('selected');
+            tg.HapticFeedback.impactOccurred('light');
         }
 
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
             document.getElementById('age-18').classList.toggle('active', age >= 18);
             document.getElementById('age-under').classList.toggle('active', age < 18);
+            tg.HapticFeedback.impactOccurred('light');
         }
 
         function showTab(name) {
@@ -151,29 +209,24 @@
 
         function sendData() {
             const service = document.getElementById('service_type').value;
-            const time = document.getElementById('order_time').value;
             
             if (!selectedAge) return tg.showAlert("выбери возраст!");
             if (!service) return tg.showAlert("выбери услугу!");
             if (!selectedDate) return tg.showAlert("выбери дату!");
-            if (!time) return tg.showAlert("выбери время!");
+            if (!selectedTime) return tg.showAlert("выбери время!");
             
-            // визуальная обратная связь
-            tg.HapticFeedback.impactOccurred('light');
+            tg.HapticFeedback.notificationOccurred('success');
             
             tg.sendData(JSON.stringify({
                 service,
                 date: selectedDate,
-                time,
+                time: selectedTime,
                 age: selectedAge,
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
         }
 
-        // инициализация
         generateCalendar();
-        
-        // настройка темы Telegram
         tg.setHeaderColor('#1a0000');
         tg.setBackgroundColor('#1a0000');
     </script>
