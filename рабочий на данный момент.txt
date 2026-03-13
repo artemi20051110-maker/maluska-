@@ -1,0 +1,569 @@
+import asyncio
+import json
+import logging
+import sqlite3
+import os
+from datetime import datetime, timedelta
+from dotenv import load_dotenv  # ?? Ё“ќ ¬ј∆Ќќ
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
+
+# ?? «ј√–”∆ј≈ћ .env ѕ≈–≈ƒ ¬—≈ћ ќ—“јЋ№Ќџћ
+load_dotenv()
+
+# === ѕ–ќ¬≈– ј „“ќ “ќ ≈Ќџ «ј√–”«»Ћ»—№ ===
+API_TOKEN = os.getenv("BOT_TOKEN")
+if not API_TOKEN:
+    raise ValueError("? BOT_TOKEN не найден в .env файле!")
+
+# === Ќј—“–ќ… » ===
+DB_PATH = os.getenv("DB_PATH", "malusko.db")
+WEB_APP_URL = os.getenv("WEB_APP_URL", "https://maluska.vercel.app")
+ADMIN_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "-1003649793662"))
+MY_ID = int(os.getenv("ADMIN_ID", "426795405"))
+PAYMENT_QR_PATH = "payment_qr.png"
+BOOKING_FEE = 300
+
+print(f"? токен загружен: {API_TOKEN[:20]}...")
+print(f"? ADMIN_ID: {MY_ID}")
+print(f"? канал: {ADMIN_CHANNEL_ID}")
+
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# === Ѕј«ј ƒјЌЌџ’ ===
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            first_name TEXT,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            user_name TEXT,
+            username TEXT,
+            service TEXT,
+            booking_date TEXT,
+            booking_time TEXT,
+            age_group TEXT,
+            status TEXT DEFAULT 'pending',
+            payment_status TEXT DEFAULT 'unpaid',
+            reminder_sent INTEGER DEFAULT 0,
+            admin_msg_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+    logger.info("? Ѕј«ј √ќ“ќ¬ј")
+
+def add_user(user_id, username, first_name):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR IGNORE INTO users (user_id, username, first_name)
+        VALUES (?, ?, ?)
+    ''', (user_id, username, first_name))
+    cursor.execute('UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE user_id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+
+def get_users_list():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, username, first_name FROM users")
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+    except Exception as e:
+        logger.error(f"ошибка базы: {e}")
+        return []
+
+def is_slot_available(date, time):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id FROM bookings 
+        WHERE booking_date = ? AND booking_time = ? AND status != 'cancelled'
+    ''', (date, time))
+    result = cursor.fetchone()
+    conn.close()
+    return result is None
+
+# ===  Ћј¬»ј“”–ј ===
+main_kb = ReplyKeyboardMarkup(keyboard=[
+    [KeyboardButton(text="?? «јѕ»—ј“№—я", web_app=WebAppInfo(url=WEB_APP_URL))],
+    [KeyboardButton(text="?? ѕќƒƒ≈–∆ ј / јƒћ»Ќ")]
+], resize_keyboard=True)
+
+# === Ћќ√» ј ===
+@dp.message(Command("start"))
+async def start(message: types.Message):
+    add_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
+    
+    await bot.set_chat_menu_button(
+        chat_id=message.chat.id,
+        menu_button=types.MenuButtonWebApp(
+            text="записатьс€",
+            web_app=WebAppInfo(url=WEB_APP_URL)
+        )
+    )
+    
+    await message.answer(
+        "привет! это запись к малюске на пирсинг.\n"
+        "жми ?? «јѕ»—ј“№—я или кнопку меню слева",
+        reply_markup=main_kb
+    )
+    logger.info(f"?? /start от {message.from_user.id}")
+
+@dp.message(F.text == "?? ѕќƒƒ≈–∆ ј / јƒћ»Ќ")
+async def support(message: types.Message):
+    await message.answer(
+        "?? что-то не так?\n\n"
+        "если возникли вопросы по записи или оплате Ч пиши: @shilgalvas"
+    )
+
+@dp.message(Command("all_users"))
+async def show_all_users(message: types.Message):
+    if message.from_user.id != MY_ID:
+        return
+    
+    users = get_users_list()
+    if not users:
+        await message.answer("в базе пока пусто")
+        return
+    
+    total_count = len(users)
+    await message.answer(f"¬—≈√ќ  Ћ»≈Ќ“ќ¬: {total_count}\n" + "Ч " * 25)
+    
+    for i in range(0, len(users), 30):
+        chunk = users[i:i + 30]
+        response = ""
+        for user in chunk:
+            u_id, u_name, f_name = user
+            name = f_name if f_name else "NoName"
+            nick = f"@{u_name}" if u_name else "ник скрыт"
+            response += f"ID: {u_id} | {name} ({nick})\n"
+        
+        if response:
+            await message.answer(response)
+
+@dp.message(Command("send"))
+async def broadcast(message: types.Message):
+    if message.from_user.id != MY_ID:
+        return
+    
+    broadcast_text = message.text.replace("/send", "").strip()
+    if not broadcast_text:
+        await message.answer("пиши так: /send [твой текст дл€ всех]")
+        return
+    
+    users = get_users_list()
+    count = 0
+    
+    for user in users:
+        try:
+            await bot.send_message(user[0], broadcast_text)
+            count += 1
+        except Exception as e:
+            logger.error(f"не удалось отправить {user[0]}: {e}")
+    
+    await message.answer(f"? рассылка завершена! получили {count} клиентов")
+
+@dp.message(Command("bookings"))
+async def show_bookings(message: types.Message):
+    if message.from_user.id != MY_ID:
+        return
+    
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, user_name, booking_date, booking_time, service, status, payment_status 
+        FROM bookings WHERE status != 'cancelled' ORDER BY booking_date, booking_time
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    if not rows:
+        await message.answer("броней пока нет")
+        return
+    
+    response = "?? Ѕ–ќЌ»:\n\n"
+    for row in rows:
+        response += f"#{row[0]} | {row[1]} | {row[2]} {row[3]} | {row[4]}\n"
+        response += f"   статус: {row[5]} | оплата: {row[6]}\n\n"
+    
+    await message.answer(response)
+
+@dp.message(F.web_app_data)
+async def web_app_handler(message: types.Message):
+    logger.info(f"?? WEB_APP_DATA от {message.from_user.id}")
+    
+    try:
+        data = json.loads(message.web_app_data.data)
+        
+        if not is_slot_available(data.get('date'), data.get('time')):
+            await message.answer("? врем€ зан€то! выбери другое.")
+            return
+        
+        user_name = data.get('username', message.from_user.first_name or 'клиент')
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO bookings (user_id, user_name, username, service, booking_date, booking_time, age_group, status, payment_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')
+        ''', (
+            message.from_user.id,
+            user_name,
+            message.from_user.username,
+            data.get('service'),
+            data.get('date'),
+            data.get('time'),
+            data.get('age')
+        ))
+        booking_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        report = (
+            f"?? «јя¬ ј #{booking_id}\n"
+            f" лиент: @{message.from_user.username}\n"
+            f"ƒата: {data.get('date')} {data.get('time')}\n"
+            f"”слуга: {data.get('service')}\n"
+            f"¬озраст: {data.get('age')}"
+        )
+        
+        sent_msg = await bot.send_message(ADMIN_CHANNEL_ID, report)
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE bookings SET admin_msg_id = ? WHERE id = ?", (sent_msg.message_id, booking_id))
+        conn.commit()
+        conn.close()
+        
+        try:
+            with open(PAYMENT_QR_PATH, 'rb') as qr_file:
+                await bot.send_photo(
+                    chat_id=message.from_user.id,
+                    photo=qr_file,
+                    caption=f"? бронь #{booking_id}\n\n?? оплати {BOOKING_FEE}? по QR выше\n? после оплаты отправь чек сюда"
+                )
+        except FileNotFoundError:
+            await message.answer(f"? бронь #{booking_id}\n?? оплати {BOOKING_FEE}? (QR не найден)")
+        
+        await message.answer("?? проверь чат Ч там QR дл€ оплаты!")
+        logger.info(f"? бронь #{booking_id}")
+        
+    except Exception as e:
+        logger.error(f"? ќЎ»Ѕ ј: {e}", exc_info=True)
+        await message.answer("? ошибка. напиши мастеру.")
+
+@dp.message(F.text)
+async def handle_text(message: types.Message):
+    if message.from_user.id == MY_ID:
+        return
+    await bot.send_message(MY_ID, f"?? @{message.from_user.username or 'без_ника'}\n{message.text}")
+    await message.answer("отправлено мастеру! жди ответа")
+
+@dp.message(F.photo)
+async def handle_photo(message: types.Message):
+    if message.from_user.id == MY_ID:
+        return
+    await bot.send_photo(
+        MY_ID,
+        message.photo[-1].file_id,
+        caption=f"?? чек от @{message.from_user.username or 'без_ника'}\nID: {message.from_user.id}"
+    )
+    await message.answer("чек отправлен на проверку! жди подтверждени€")
+
+async def check_reminders():
+    """напоминает за 2 часа до записи"""
+    while True:
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            
+            now = datetime.now()
+            target_time = (now + timedelta(hours=2)).strftime("%H:%M")
+            target_date = now.strftime("%Y-%m-%d")
+            
+            cursor.execute('''
+                SELECT user_id, user_name, booking_time FROM bookings 
+                WHERE booking_date = ? AND booking_time = ? 
+                AND reminder_sent = 0 AND status = 'confirmed'
+            ''', (target_date, target_time))
+            
+            to_remind = cursor.fetchall()
+            
+            for user_id, name, b_time in to_remind:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=f"?? {name}, напоминаем: запись через 2 часа ({b_time})!\n\n?? Ўейкмана 24"
+                )
+                cursor.execute("UPDATE bookings SET reminder_sent = 1 WHERE user_id = ? AND booking_time = ?", (user_id, b_time))
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.error(f"ошибка напоминаний: {e}")
+        
+        await asyncio.sleep(60)
+
+async def main():
+    logger.info("?? «јѕ”— ...")
+    init_db()
+    asyncio.create_task(check_reminders())
+    logger.info(f"ADMIN_CHANNEL_ID={ADMIN_CHANNEL_ID}, MY_ID={MY_ID}")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("бот остановлен")
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="style.css?v=fix30">
+    <title>ћјЋё— ј</title>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">ћјЋё— ј</h1>
+        <p class="subtitle">пирсинг студи€</p>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('booking')">?? запись</button>
+            <button class="tab-btn" onclick="showTab('price')">?? прайс</button>
+        </div>
+
+        <div id="booking" class="tab-content active">
+            <div class="form-group">
+                <label>возраст:</label>
+                <div class="age-selector">
+                    <button class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
+                    <button class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>услуга:</label>
+                <select id="service_type">
+                    <option value="септум">септум Ч 1500?</option>
+                    <option value="нострил">нострил Ч 1200?</option>
+                    <option value="бридж">бридж Ч 1800?</option>
+                    <option value="мочка">мочка Ч 800?</option>
+                    <option value="хр€щ">хр€щ Ч 1200?</option>
+                    <option value="пупок">пупок Ч 2000?</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>дата (листай ?):</label>
+                <div class="calendar-wrapper">
+                    <div class="calendar-grid" id="calendar"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>врем€:</label>
+                <select id="order_time">
+                    <option value="">выбери дату</option>
+                    <option value="16:00">16:00</option>
+                    <option value="17:00">17:00</option>
+                    <option value="18:00">18:00</option>
+                    <option value="19:00">19:00</option>
+                    <option value="20:00">20:00</option>
+                </select>
+            </div>
+
+            <button class="main-button" onclick="sendData()">забронировать (300?)</button>
+        </div>
+
+        <div id="price" class="tab-content">
+            <h2>?? ѕ–ј…—</h2>
+            <div class="price-item"><span>септум</span><span>1500?</span></div>
+            <div class="price-item"><span>нострил</span><span>1200?</span></div>
+            <div class="price-item"><span>бридж</span><span>1800?</span></div>
+            <div class="price-item"><span>мочка</span><span>800?</span></div>
+            <div class="price-item"><span>хр€щ</span><span>1200?</span></div>
+            <div class="price-item"><span>пупок</span><span>2000?</span></div>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        const tg = window.Telegram.WebApp;
+        let selectedAge = "";
+        let selectedDate = "";
+        tg.expand();
+
+        function generateCalendar() {
+            const calendar = document.getElementById('calendar');
+            const today = new Date();
+            const days = ['вс','пн','вт','ср','чт','пт','сб'];
+            const months = ['€нв','фев','мар','апр','май','июн','июл','авг','сен','окт','но€','дек'];
+            
+            let html = '<div class="cal-row">';
+            days.forEach(d => html += `<div class="cal-h">${d}</div>`);
+            html += '</div><div class="cal-row">';
+
+            for (let i = 0; i < 30; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+                const dayName = days[date.getDay()];
+                const dayNum = date.getDate();
+                const month = months[date.getMonth()];
+                const isToday = i === 0;
+                
+                html += `<div class="cal-day ${isToday?'today':''}" data-date="${dateStr}" onclick="selectDate('${dateStr}')">
+                    <div class="cal-d">${dayName}</div>
+                    <div class="cal-n">${dayNum}</div>
+                    <div class="cal-m">${month}</div>
+                </div>`;
+            }
+            html += '</div>';
+            calendar.innerHTML = html;
+        }
+
+        function selectDate(date) {
+            selectedDate = date;
+            document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+            document.querySelector(`[data-date="${date}"]`).classList.add('selected');
+        }
+
+        function setAge(age) {
+            selectedAge = age >= 18 ? "18+" : "до 18";
+            document.getElementById('age-18').classList.toggle('active', age >= 18);
+            document.getElementById('age-under').classList.toggle('active', age < 18);
+        }
+
+        function showTab(name) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(name).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function sendData() {
+            const service = document.getElementById('service_type').value;
+            const time = document.getElementById('order_time').value;
+            if (!selectedAge) return tg.showAlert("выбери возраст!");
+            if (!selectedDate) return tg.showAlert("выбери дату!");
+            if (!time) return tg.showAlert("выбери врем€!");
+            
+            tg.sendData(JSON.stringify({
+                service, date: selectedDate, time, age: selectedAge,
+                username: tg.initDataUnsafe?.user?.username || "клиент"
+            }));
+        }
+
+        generateCalendar();
+    </script>
+</body>
+</html>
+
+
+
+
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: linear-gradient(135deg, #1a0000, #0d0d0d, #1a0000);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 15px;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 380px;
+    margin: 0 auto;
+    background: rgba(26,26,26,0.95);
+    padding: 20px 15px;
+    border-radius: 20px;
+    border: 2px solid #cc3333;
+}
+
+.title { color: #cc3333; text-align: center; font-size: 24px; margin-bottom: 5px; }
+.subtitle { text-align: center; color: #ff6666; font-size: 11px; margin-bottom: 15px; }
+
+.tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+.tab-btn { flex: 1; padding: 10px; background: #222; border: 2px solid #444; color: #fff; border-radius: 8px; cursor: pointer; }
+.tab-btn.active { border-color: #cc3333; background: #330000; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.form-group { margin-bottom: 15px; }
+label { display: block; color: #ff6666; font-size: 11px; margin-bottom: 8px; text-transform: uppercase; }
+
+.age-selector { display: flex; gap: 10px; }
+.age-btn { flex: 1; padding: 12px; background: #222; border: 2px solid #444; color: #fff; border-radius: 8px; cursor: pointer; }
+.age-btn.active { border-color: #cc3333; background: #330000; }
+
+select { width: 100%; padding: 12px; background: #222; border: 2px solid #444; color: #fff; border-radius: 8px; }
+
+/*  јЋ≈Ќƒј–№ √ќ–»«ќЌ“јЋ№Ќџ… */
+.calendar-wrapper {
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+.calendar-wrapper::-webkit-scrollbar { height: 4px; }
+.calendar-wrapper::-webkit-scrollbar-thumb { background: #cc3333; border-radius: 2px; }
+
+.cal-row { display: flex; gap: 4px; min-width: max-content; }
+.cal-h { width: 40px; text-align: center; font-size: 9px; color: #ff6666; padding: 4px; }
+.cal-day {
+    width: 40px;
+    min-height: 55px;
+    background: #222;
+    border: 2px solid #444;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 4px;
+}
+.cal-day:hover { border-color: #cc6666; }
+.cal-day.selected { border-color: #cc3333; background: #330000; }
+.cal-day.today { border-color: #cc3333; }
+.cal-d { font-size: 8px; color: #ff6666; }
+.cal-n { font-size: 14px; font-weight: 700; color: #fff; }
+.cal-m { font-size: 8px; color: #ff6666; }
+
+.main-button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #cc3333, #990000);
+    border: none;
+    color: #fff;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.price-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333; font-size: 12px; }
+.price-item span:last-child { color: #cc3333; font-weight: 700; }

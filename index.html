@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=fix30">
+    <link rel="stylesheet" href="style.css?v=fix31">
     <title>МАЛЮСКА</title>
 </head>
 <body>
@@ -28,6 +28,7 @@
             <div class="form-group">
                 <label>услуга:</label>
                 <select id="service_type">
+                    <option value="">выбери услугу</option>
                     <option value="септум">септум — 1500₽</option>
                     <option value="нострил">нострил — 1200₽</option>
                     <option value="бридж">бридж — 1800₽</option>
@@ -42,21 +43,18 @@
                 <div class="calendar-wrapper">
                     <div class="calendar-grid" id="calendar"></div>
                 </div>
+                <p class="hint">⚠️ после выбора даты проверь доступное время</p>
             </div>
 
             <div class="form-group">
                 <label>время:</label>
-                <select id="order_time">
-                    <option value="">выбери дату</option>
-                    <option value="16:00">16:00</option>
-                    <option value="17:00">17:00</option>
-                    <option value="18:00">18:00</option>
-                    <option value="19:00">19:00</option>
-                    <option value="20:00">20:00</option>
+                <select id="order_time" disabled>
+                    <option value="">сначала выбери дату</option>
                 </select>
             </div>
 
             <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
+            <p class="hint">💰 бронь возвращается при посещении</p>
         </div>
 
         <div id="price" class="tab-content">
@@ -67,6 +65,7 @@
             <div class="price-item"><span>мочка</span><span>800₽</span></div>
             <div class="price-item"><span>хрящ</span><span>1200₽</span></div>
             <div class="price-item"><span>пупок</span><span>2000₽</span></div>
+            <p class="hint" style="margin-top: 15px;">💰 бронь 300₽ возвращается при посещении</p>
         </div>
     </div>
 
@@ -76,6 +75,9 @@
         let selectedAge = "";
         let selectedDate = "";
         tg.expand();
+
+        // доступные времена
+        const availableTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
@@ -95,8 +97,10 @@
                 const dayNum = date.getDate();
                 const month = months[date.getMonth()];
                 const isToday = i === 0;
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 
-                html += `<div class="cal-day ${isToday?'today':''}" data-date="${dateStr}" onclick="selectDate('${dateStr}')">
+                html += `<div class="cal-day ${isToday?'today':''} ${isWeekend?'weekend':''}" 
+                    data-date="${dateStr}" onclick="selectDate('${dateStr}')">
                     <div class="cal-d">${dayName}</div>
                     <div class="cal-n">${dayNum}</div>
                     <div class="cal-m">${month}</div>
@@ -108,8 +112,28 @@
 
         function selectDate(date) {
             selectedDate = date;
+            
+            // убираем выделение со всех
             document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+            // выделяем выбранную
             document.querySelector(`[data-date="${date}"]`).classList.add('selected');
+            
+            // обновляем список времени
+            updateTimeSelect();
+        }
+
+        function updateTimeSelect() {
+            const timeSelect = document.getElementById('order_time');
+            timeSelect.disabled = false;
+            
+            // очищаем и добавляем времена
+            timeSelect.innerHTML = '<option value="">выбери время</option>';
+            availableTimes.forEach(time => {
+                const option = document.createElement('option');
+                option.value = time;
+                option.textContent = time;
+                timeSelect.appendChild(option);
+            });
         }
 
         function setAge(age) {
@@ -128,17 +152,30 @@
         function sendData() {
             const service = document.getElementById('service_type').value;
             const time = document.getElementById('order_time').value;
+            
             if (!selectedAge) return tg.showAlert("выбери возраст!");
+            if (!service) return tg.showAlert("выбери услугу!");
             if (!selectedDate) return tg.showAlert("выбери дату!");
             if (!time) return tg.showAlert("выбери время!");
             
+            // визуальная обратная связь
+            tg.HapticFeedback.impactOccurred('light');
+            
             tg.sendData(JSON.stringify({
-                service, date: selectedDate, time, age: selectedAge,
+                service,
+                date: selectedDate,
+                time,
+                age: selectedAge,
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
         }
 
+        // инициализация
         generateCalendar();
+        
+        // настройка темы Telegram
+        tg.setHeaderColor('#1a0000');
+        tg.setBackgroundColor('#1a0000');
     </script>
 </body>
 </html>
