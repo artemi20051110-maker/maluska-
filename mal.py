@@ -169,6 +169,23 @@ async def show_bookings(message: types.Message):
         status_icon = "✅" if r[6] == "paid" else "⏳"
         resp += f"{status_icon} #{r[0]} | {r[1]} | {r[2]} {r[3]} | {r[4]}\n   статус:{r[5]} оплата:{r[6]}\n\n"
     await message.answer(resp)
+@dp.message(Command("get_slots"))
+async def get_booked_slots(message: types.Message):
+    """Возвращает все занятые слоты для WebApp"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT booking_date, booking_time FROM bookings WHERE status != 'cancelled'")
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # группируем по датам
+    slots_by_date = {}
+    for date, time in rows:
+        if date not in slots_by_date:
+            slots_by_date[date] = []
+        slots_by_date[date].append(time)
+    
+    await message.answer(json.dumps(slots_by_date))
 
 @dp.message(Command("send"))
 async def broadcast(message: types.Message):

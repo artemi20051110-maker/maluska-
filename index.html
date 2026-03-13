@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=fix32">
+    <link rel="stylesheet" href="style.css?v=fix33">
     <title>МАЛЮСКА</title>
 </head>
 <body>
@@ -77,34 +77,47 @@
         let selectedAge = "";
         let selectedDate = "";
         let selectedTime = "";
+        let bookedSlots = {}; // занятые слоты с сервера
         tg.expand();
 
-        // 📅 РАСПИСАНИЕ НА МАРТ 2026 (обновляй здесь!)
-        // format: "YYYY-MM-DD": { status: "free"|"busy"|"weekend"|"event", times: ["16:00", "17:00"...] }
-        const schedule = {
-            "2026-03-10": { status: "free", times: ["16:00", "17:00", "18:00", "19:00", "19:30"] },
-            "2026-03-11": { status: "free", times: ["16:00", "17:00", "18:00", "19:00", "19:30"] },
-            "2026-03-12": { status: "free", times: ["16:00", "17:00", "18:00", "19:00"] },
+        // 📅 РАСПИСАНИЕ (выходные и события)
+        const staticSchedule = {
             "2026-03-13": { status: "weekend", times: [] },
             "2026-03-14": { status: "weekend", times: [] },
             "2026-03-15": { status: "weekend", times: [] },
-            "2026-03-16": { status: "free", times: ["16:00", "17:00", "18:00", "19:00", "20:00"] },
-            "2026-03-17": { status: "busy", times: [] },
-            "2026-03-18": { status: "busy", times: [] },
             "2026-03-19": { status: "event", times: [], note: "интенсив" },
             "2026-03-20": { status: "weekend", times: [] },
-            "2026-03-21": { status: "busy", times: [] },
             "2026-03-22": { status: "weekend", times: [], note: "тату" },
             "2026-03-23": { status: "weekend", times: [] },
             "2026-03-24": { status: "weekend", times: [] },
-            "2026-03-25": { status: "busy", times: [] },
-            "2026-03-26": { status: "busy", times: [] },
-            "2026-03-27": { status: "weekend", times: [] },
-            "2026-03-28": { status: "busy", times: [] },
-            "2026-03-29": { status: "free", times: ["16:00", "17:00", "18:00"] },
-            "2026-03-30": { status: "free", times: ["16:00", "17:00", "18:00"] },
-            "2026-03-31": { status: "free", times: ["16:00", "17:00", "18:00"] }
+            "2026-03-27": { status: "weekend", times: [] }
         };
+
+        // 🕐 доступные времена по умолчанию
+        const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
+
+        // 🔄 ЗАГРУЗИТЬ ЗАНЯТЫЕ СЛОТЫ С СЕРВЕРА
+        async function loadBookedSlots() {
+            try {
+                // отправляем запрос боту
+                tg.sendData(JSON.stringify({ action: "get_slots" }));
+                
+                // слушаем ответ
+                tg.onEvent('message', (event) => {
+                    if (event.data && typeof event.data === 'string') {
+                        try {
+                            bookedSlots = JSON.parse(event.data);
+                            console.log('загружены слоты:', bookedSlots);
+                            generateCalendar(); // перерисовать календарь
+                        } catch (e) {
+                            console.error('ошибка парсинга:', e);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('ошибка загрузки слотов:', e);
+            }
+        }
 
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
@@ -125,21 +138,36 @@
                 const month = months[date.getMonth()];
                 const isToday = i === 0;
                 
-                // получаем статус из расписания
-                const dayData = schedule[dateStr];
-                let statusClass = "";
+                // проверяем статичное расписание
+                const staticData = staticSchedule[dateStr];
+                // проверяем занятые слоты с сервера
+                const bookedTimes = bookedSlots[dateStr] || [];
+                
+                let statusClass = "free";
                 let statusText = "";
                 
-                if (dayData) {
-                    statusClass = dayData.status;
-                    if (dayData.status === "weekend") statusText = "вых";
-                    else if (dayData.status === "busy") statusText = "нет окон";
-                    else if (dayData.status === "event") statusText = dayData.note || "событие";
-                    else if (dayData.status === "free") statusText = dayData.times.length + " слотов";
+                if (staticData) {
+                    statusClass = staticData.status;
+                    if (staticData.status === "weekend") statusText = "вых";
+                    else if (staticData.status === "event") statusText = staticData.note || "событие";
+                } else if (bookedTimes.length >= defaultTimes.length) {
+                    // все слоты заняты
+                    statusClass = "busy";
+                    statusText = "нет окон";
+                } else if (bookedTimes.length > 0) {
+                    // частично занято
+                    statusClass = "free";
+                    statusText = (defaultTimes.length - bookedTimes.length) + " слотов";
                 } else {
-                    // если даты нет в расписании - считаем выходным
-                    statusClass = "weekend";
-                    statusText = "вых";
+                    // свободно
+                    statusClass = "free";
+                    statusText = defaultTimes.length + " слотов";
+                }
+                
+                // если все слоты заняты - помечаем как busy
+                if (bookedTimes.length >= defaultTimes.length && !staticData) {
+                    statusClass = "busy";
+                    statusText = "нет окон";
                 }
                 
                 html += `<div class="cal-day ${isToday?'today':''} ${statusClass}" 
@@ -167,20 +195,29 @@
         function updateTimeSlots(date) {
             const container = document.getElementById('time-slots');
             const dateText = document.getElementById('selected-date-text');
-            const dayData = schedule[date];
+            const staticData = staticSchedule[date];
+            const bookedTimes = bookedSlots[date] || [];
             
-            // показываем дату
             const dateObj = new Date(date);
             const dayName = dateObj.toLocaleDateString('ru-RU', { weekday: 'long' });
             dateText.textContent = `${dayName}, ${date}`;
             
-            if (!dayData || dayData.status === "weekend" || dayData.status === "busy" || dayData.times.length === 0) {
+            // если выходной или событие - нет времени
+            if (staticData && (staticData.status === "weekend" || staticData.status === "event")) {
                 container.innerHTML = '<p class="no-slots">❌ нет доступного времени</p>';
                 return;
             }
             
+            // фильтруем занятые времена
+            const availableTimes = defaultTimes.filter(t => !bookedTimes.includes(t));
+            
+            if (availableTimes.length === 0) {
+                container.innerHTML = '<p class="no-slots">❌ все слоты заняты</p>';
+                return;
+            }
+            
             let html = '';
-            dayData.times.forEach(time => {
+            availableTimes.forEach(time => {
                 html += `<button class="time-slot" onclick="selectTime('${time}')">${time}</button>`;
             });
             container.innerHTML = html;
@@ -215,6 +252,12 @@
             if (!selectedDate) return tg.showAlert("выбери дату!");
             if (!selectedTime) return tg.showAlert("выбери время!");
             
+            // проверка что время ещё свободно
+            const bookedTimes = bookedSlots[selectedDate] || [];
+            if (bookedTimes.includes(selectedTime)) {
+                return tg.showAlert("❌ это время только что заняли! выбери другое");
+            }
+            
             tg.HapticFeedback.notificationOccurred('success');
             
             tg.sendData(JSON.stringify({
@@ -226,7 +269,8 @@
             }));
         }
 
-        generateCalendar();
+        // загрузка при старте
+        loadBookedSlots();
         tg.setHeaderColor('#1a0000');
         tg.setBackgroundColor('#1a0000');
     </script>
