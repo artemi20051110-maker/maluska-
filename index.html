@@ -277,6 +277,20 @@
         loadBookedSlots();
         tg.setHeaderColor('#1a0000');
         tg.setBackgroundColor('#1a0000');
+        // Добавь в конец script, перед закрывающим
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        // Страница загружена из кэша - перезагрузи слоты
+        loadBookedSlots();
+    }
+});
+
+// Обновление при возврате из бота
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        loadBookedSlots();
+    }
+});
     </script>
 </body>
 </html>
