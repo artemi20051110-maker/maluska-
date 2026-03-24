@@ -3,89 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css?v=fix40">
+    <link rel="stylesheet" href="style.css?v=51">
     <title>МАЛЮСКА</title>
+    <meta http-equiv="Cache-Control" content="no-cache">
 </head>
 <body>
     <div class="container">
         <h1 class="title">МАЛЮСКА</h1>
         <p class="subtitle">пирсинг студия</p>
         
-        <div id="booking-screen" class="screen active">
-            <div class="tabs">
-                <button class="tab-btn active" onclick="showTab('booking')">📅 запись</button>
-                <button class="tab-btn" onclick="showTab('price')">💰 прайс</button>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('booking')">📅 запись</button>
+            <button class="tab-btn" onclick="showTab('price')">💰 прайс</button>
+        </div>
+
+        <div id="booking" class="tab-content active">
+            <div class="form-group">
+                <label>возраст:</label>
+                <div class="age-selector">
+                    <button class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
+                    <button class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
+                </div>
             </div>
 
-            <div id="booking" class="tab-content active">
-                <div class="form-group">
-                    <label>возраст:</label>
-                    <div class="age-selector">
-                        <button class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
-                        <button class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>услуга:</label>
-                    <select id="service_type">
-                        <option value="">выбери услугу</option>
-                        <option value="септум">септум — 1500₽</option>
-                        <option value="нострил">нострил — 1200₽</option>
-                        <option value="бридж">бридж — 1800₽</option>
-                        <option value="мочка">мочка — 800₽</option>
-                        <option value="хрящ">хрящ — 1200₽</option>
-                        <option value="пупок">пупок — 2000₽</option>
-                        <option value="индастриал">индастриал — 2500₽</option>
-                        <option value="конч">конч — 1500₽</option>
-                        <option value="дейс">дейс — 2000₽</option>
-                        <option value="антибровь">антибровь — 1500₽</option>
-                        <option value="губа">губа — 1500₽</option>
-                        <option value="язык">язык — 2000₽</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>комментарий (необязательно):</label>
-                    <textarea id="comment" placeholder="например: боюсь боли, первый раз..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>дата:</label>
-                    <div class="calendar-wrapper">
-                        <div class="calendar-grid" id="calendar"></div>
-                    </div>
-                    <div class="legend">
-                        <span class="legend-item"><span class="dot free"></span>свободно</span>
-                        <span class="legend-item"><span class="dot busy"></span>занято</span>
-                        <span class="legend-item"><span class="dot weekend"></span>выходной</span>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>время на <span id="selected-date-text"></span>:</label>
-                    <div class="time-slots" id="time-slots"></div>
-                </div>
-
-                <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
-                <p class="hint">💰 бронь возвращается при посещении</p>
+            <div class="form-group">
+                <label>услуга:</label>
+                <select id="service_type">
+                    <option value="">выбери услугу</option>
+                    <option value="септум">септум — 1500₽</option>
+                    <option value="нострил">нострил — 1200₽</option>
+                    <option value="бридж">бридж — 1800₽</option>
+                    <option value="мочка">мочка — 800₽</option>
+                    <option value="хрящ">хрящ — 1200₽</option>
+                    <option value="пупок">пупок — 2000₽</option>
+                    <option value="индастриал">индастриал — 2500₽</option>
+                    <option value="конч">конч — 1500₽</option>
+                    <option value="дейс">дейс — 2000₽</option>
+                    <option value="антибровь">антибровь — 1500₽</option>
+                    <option value="губа">губа — 1500₽</option>
+                    <option value="язык">язык — 2000₽</option>
+                </select>
             </div>
 
-            <div id="price" class="tab-content">
-                <h2>💰 ПРАЙС</h2>
-                <div class="price-item"><span>септум</span><span>1500₽</span></div>
-                <div class="price-item"><span>нострил</span><span>1200₽</span></div>
-                <div class="price-item"><span>бридж</span><span>1800₽</span></div>
-                <div class="price-item"><span>мочка</span><span>800₽</span></div>
-                <div class="price-item"><span>хрящ</span><span>1200₽</span></div>
-                <div class="price-item"><span>пупок</span><span>2000₽</span></div>
-                <div class="price-item"><span>индастриал</span><span>2500₽</span></div>
-                <div class="price-item"><span>конч</span><span>1500₽</span></div>
-                <div class="price-item"><span>дейс</span><span>2000₽</span></div>
-                <div class="price-item"><span>антибровь</span><span>1500₽</span></div>
-                <div class="price-item"><span>губа</span><span>1500₽</span></div>
-                <div class="price-item"><span>язык</span><span>2000₽</span></div>
+            <div class="form-group">
+                <label>комментарий:</label>
+                <textarea id="comment" placeholder="боюсь боли, первый раз..."></textarea>
             </div>
+
+            <div class="form-group">
+                <label>дата:</label>
+                <div class="calendar-wrapper">
+                    <div class="calendar-grid" id="calendar"></div>
+                </div>
+                <div class="legend">
+                    <span class="legend-item"><span class="dot free"></span>свободно</span>
+                    <span class="legend-item"><span class="dot busy"></span>занято</span>
+                    <span class="legend-item"><span class="dot weekend"></span>выходной</span>
+                </div>
+                <button class="refresh-btn" onclick="loadBookedSlots()">🔄 обновить слоты</button>
+            </div>
+
+            <div class="form-group">
+                <label>время на <span id="selected-date-text"></span>:</label>
+                <div class="time-slots" id="time-slots"></div>
+            </div>
+
+            <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
+            <p class="hint">💰 бронь возвращается</p>
+        </div>
+
+        <div id="price" class="tab-content">
+            <h2>💰 ПРАЙС</h2>
+            <div class="price-item"><span>септум</span><span>1500₽</span></div>
+            <div class="price-item"><span>нострил</span><span>1200₽</span></div>
+            <div class="price-item"><span>бридж</span><span>1800₽</span></div>
+            <div class="price-item"><span>мочка</span><span>800₽</span></div>
+            <div class="price-item"><span>хрящ</span><span>1200₽</span></div>
+            <div class="price-item"><span>пупок</span><span>2000₽</span></div>
+            <div class="price-item"><span>индастриал</span><span>2500₽</span></div>
+            <div class="price-item"><span>конч</span><span>1500₽</span></div>
+            <div class="price-item"><span>дейс</span><span>2000₽</span></div>
+            <div class="price-item"><span>антибровь</span><span>1500₽</span></div>
+            <div class="price-item"><span>губа</span><span>1500₽</span></div>
+            <div class="price-item"><span>язык</span><span>2000₽</span></div>
         </div>
     </div>
 
@@ -107,41 +107,41 @@
             "2026-03-22": { status: "weekend", note: "тату" },
             "2026-03-23": { status: "weekend" },
             "2026-03-24": { status: "weekend" },
-            "2026-03-27": { status: "weekend" },
-            "2026-03-29": { status: "free" },
-            "2026-03-30": { status: "free" },
-            "2026-03-31": { status: "free" },
-            "2026-04-01": { status: "free" },
-            "2026-04-02": { status: "free" },
-            "2026-04-03": { status: "free" },
-            "2026-04-05": { status: "weekend" },
-            "2026-04-06": { status: "weekend" },
-            "2026-04-12": { status: "weekend" },
-            "2026-04-13": { status: "weekend" },
-            "2026-04-19": { status: "weekend" },
-            "2026-04-20": { status: "weekend" },
-            "2026-04-26": { status: "weekend" },
-            "2026-04-27": { status: "weekend" }
+            "2026-03-27": { status: "weekend" }
         };
 
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
         async function loadBookedSlots() {
+            const calendar = document.getElementById('calendar');
+            calendar.style.opacity = '0.5';
+            
             try {
-                const response = await fetch('http://82.24.123.231:5000/slots');
-                if (response.ok) {
-                    bookedSlots = await response.json();
-                    console.log('слоты:', bookedSlots);
+                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now(), {
+                    cache: 'no-store',
+                    mode: 'no-cors'
+                });
+                
+                // При no-cors ответ opaque, читаем из localStorage
+                const cached = localStorage.getItem('bookedSlots_' + new Date().toDateString());
+                if (cached) {
+                    bookedSlots = JSON.parse(cached);
+                    console.log('📦 кэш:', bookedSlots);
                 }
             } catch (e) {
-                console.log('API недоступно');
-                bookedSlots = {};
+                console.log('⚠️ API:', e);
+                const cached = localStorage.getItem('bookedSlots_' + new Date().toDateString());
+                if (cached) bookedSlots = JSON.parse(cached);
             }
+            
+            calendar.style.opacity = '1';
             generateCalendar();
         }
 
-        // 🔄 АВТООБНОВЛЕНИЕ СЛОТОВ КАЖДЫЕ 30 СЕК
-        setInterval(loadBookedSlots, 30000);
+        // Сохраняем слоты после брони
+        tg.onEvent('mainButtonClicked', () => {
+            setTimeout(loadBookedSlots, 2000);
+        });
 
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
@@ -214,14 +214,14 @@
             dateText.textContent = `${dayName}, ${date}`;
             
             if (staticData && (staticData.status === "weekend" || staticData.status === "event")) {
-                container.innerHTML = '<p class="no-slots">❌ нет доступного времени</p>';
+                container.innerHTML = '<p class="no-slots">❌ нет времени</p>';
                 return;
             }
             
             const availableTimes = defaultTimes.filter(t => !bookedTimes.includes(t));
             
             if (availableTimes.length === 0) {
-                container.innerHTML = '<p class="no-slots">❌ все слоты заняты</p>';
+                container.innerHTML = '<p class="no-slots">❌ все заняты</p>';
                 return;
             }
             
@@ -236,14 +236,12 @@
             selectedTime = time;
             document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
             event.target.classList.add('selected');
-            tg.HapticFeedback.impactOccurred('light');
         }
 
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
             document.getElementById('age-18').classList.toggle('active', age >= 18);
             document.getElementById('age-under').classList.toggle('active', age < 18);
-            tg.HapticFeedback.impactOccurred('light');
         }
 
         function showTab(name) {
@@ -262,35 +260,21 @@
             if (!selectedDate) return tg.showAlert("выбери дату!");
             if (!selectedTime) return tg.showAlert("выбери время!");
             
-            tg.HapticFeedback.notificationOccurred('success');
-            
             tg.sendData(JSON.stringify({
-                service,
-                date: selectedDate,
-                time: selectedTime,
-                age: selectedAge,
-                comment: comment || '',
+                service, date: selectedDate, time: selectedTime,
+                age: selectedAge, comment: comment || '',
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
         }
 
+        // Загружаем слоты при старте и при возврате
         loadBookedSlots();
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) loadBookedSlots();
+        });
+        
         tg.setHeaderColor('#1a0000');
         tg.setBackgroundColor('#1a0000');
-        // Добавь в конец script, перед закрывающим
-window.addEventListener('pageshow', function(event) {
-    if (event.persisted) {
-        // Страница загружена из кэша - перезагрузи слоты
-        loadBookedSlots();
-    }
-});
-
-// Обновление при возврате из бота
-document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-        loadBookedSlots();
-    }
-});
     </script>
 </body>
 </html>
