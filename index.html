@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=90">
+    <link rel="stylesheet" href="style.css?v=100">
     <title>МАЛЮСКА</title>
-    <meta http-equiv="Cache-Control" content="no-cache">
 </head>
 <body>
     <div class="container">
@@ -26,25 +25,63 @@
                     <button class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
                     <button class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
                 </div>
-                <div class="age-warning" id="age-warning">
-                    до 18 лет только с письменным согласием родителей
-                </div>
+                <div class="age-warning" id="age-warning">до 18 лет только с письменным согласием родителей</div>
             </div>
 
             <div class="form-group">
                 <label>услуга</label>
                 <select id="service_type">
                     <option value="">выбери услугу</option>
-                    <option value="септум">септум — 2600₽</option>
-                    <option value="нострил">нострил — 1800₽</option>
-                    <option value="бридж">бридж — 2100₽</option>
-                    <option value="бровь">бровь — 1800₽</option>
-                    <option value="губа">губа/лабрет — 1800₽</option>
-                    <option value="пупок">пупок — 2000₽</option>
-                    <option value="язык">язык — 1800₽</option>
-                    <option value="хрящ">хрящ — 1200₽</option>
-                    <option value="мочка">мочка — 800₽</option>
-                    <option value="индастриал">индастриал — 3400₽</option>
+                    <optgroup label="ЛИЦО">
+                        <option value="бридж">бридж — 2100₽</option>
+                        <option value="губа/лабрет">губа/лабрет — 1800₽</option>
+                        <option value="верт лабрет">верт. лабрет — 2000₽</option>
+                        <option value="верх губа">верх. губа — 1900₽</option>
+                        <option value="септум">септум — 2600₽</option>
+                        <option value="бровь">бровь — 1800₽</option>
+                        <option value="нострил">нострил — 1800₽</option>
+                        <option value="высокий нострил">высокий нострил — 2500₽</option>
+                        <option value="щека">щека — 3000₽</option>
+                        <option value="укус георгина">укус георгина — 2000₽</option>
+                    </optgroup>
+                    <optgroup label="РОТ">
+                        <option value="язык">язык — 1800₽</option>
+                        <option value="смайл">смайл — 1800₽</option>
+                        <option value="антисмайл">антисмайл — 2000₽</option>
+                        <option value="френулум">френулум — 3000₽</option>
+                        <option value="второй язык">второй язык — 1900₽</option>
+                    </optgroup>
+                    <optgroup label="УШИ">
+                        <option value="мочка">мочка — 1400₽</option>
+                        <option value="верт мочка">верт. мочка — 1600₽</option>
+                        <option value="хеликс">хеликс — 1800₽</option>
+                        <option value="трагус">трагус — 2000₽</option>
+                        <option value="дейс">дейс — 2000₽</option>
+                        <option value="конч">конч — 1800₽</option>
+                        <option value="анти трагус">анти трагус — 1900₽</option>
+                        <option value="флэт">флэт — 1800₽</option>
+                        <option value="руук">руук — 1900₽</option>
+                        <option value="индастриал">индастриал — 3400₽</option>
+                        <option value="снаг">снаг — 1800₽</option>
+                        <option value="форвард хеликс">форвард хеликс — 2000₽</option>
+                        <option value="пина">пина — 1800₽</option>
+                    </optgroup>
+                    <optgroup label="ТЕЛО">
+                        <option value="пупок">пупок — 2000₽</option>
+                        <option value="соски">соски (18+) — 2100₽</option>
+                        <option value="Кристина">Кристина — 5000₽</option>
+                    </optgroup>
+                    <optgroup label="МИКРОДЕРМАЛЫ">
+                        <option value="микродермал скула">скула — 4000₽</option>
+                        <option value="микродермал лоб">лоб — 5000₽</option>
+                        <option value="микродермал яремная">яремная впадина — 5000₽</option>
+                        <option value="удаление микродермала">удаление — 1700₽</option>
+                    </optgroup>
+                    <optgroup label="ПРОЧЕЕ">
+                        <option value="консультация онлайн">онлайн консультация — бесплатно</option>
+                        <option value="очная консультация">очная консультация — 500₽</option>
+                        <option value="даунсайз">даунсайз — 500₽</option>
+                    </optgroup>
                 </select>
             </div>
 
@@ -66,7 +103,7 @@
             </div>
 
             <div class="form-group">
-                <label>время</label>
+                <label id="selected-date-label">время</label>
                 <div class="time-slots" id="time-slots"></div>
             </div>
 
@@ -81,26 +118,58 @@
             <div class="price-category">ЛИЦО</div>
             <div class="price-item"><span>бридж</span><span>2100₽</span></div>
             <div class="price-item"><span>губа/лабрет</span><span>1800₽</span></div>
+            <div class="price-item"><span>верт. лабрет</span><span>2000₽</span></div>
+            <div class="price-item"><span>верх. губа</span><span>1900₽</span></div>
             <div class="price-item"><span>септум</span><span>2600₽</span></div>
             <div class="price-item"><span>бровь</span><span>1800₽</span></div>
-            <div class="price-item"><span>нострил</span><span>1800₽</span></div>
+            <div class="price-item"><span>нострил/крыло</span><span>1800₽</span></div>
+            <div class="price-item"><span>высокий нострил</span><span>2500₽</span></div>
             <div class="price-item"><span>щека</span><span>3000₽</span></div>
+            <div class="price-item"><span>укус георгина</span><span>2000₽</span></div>
+            <div class="price-hint">остальные укусы — симметрия. цена за одну единицу</div>
             
             <div class="price-category">РОТ</div>
             <div class="price-item"><span>язык</span><span>1800₽</span></div>
             <div class="price-item"><span>смайл</span><span>1800₽</span></div>
+            <div class="price-item"><span>антисмайл</span><span>2000₽</span></div>
+            <div class="price-item"><span>френулум</span><span>3000₽</span></div>
+            <div class="price-item"><span>второй язык</span><span>1900₽</span></div>
             
             <div class="price-category">УШИ</div>
             <div class="price-item"><span>мочка</span><span>1400₽</span></div>
-            <div class="price-item"><span>хрящ</span><span>1200₽</span></div>
-            <div class="price-item"><span>индастриал</span><span>3400₽</span></div>
-            <div class="price-item"><span>конч</span><span>1800₽</span></div>
-            <div class="price-item"><span>дейс</span><span>2000₽</span></div>
+            <div class="price-item"><span>верт. мочка</span><span>1600₽</span></div>
+            <div class="price-item"><span>хеликс/скрытый</span><span>1800₽</span></div>
             <div class="price-item"><span>трагус</span><span>2000₽</span></div>
+            <div class="price-item"><span>дейс</span><span>2000₽</span></div>
+            <div class="price-item"><span>конч</span><span>1800₽</span></div>
+            <div class="price-item"><span>анти трагус</span><span>1900₽</span></div>
+            <div class="price-item"><span>флэт</span><span>1800₽</span></div>
+            <div class="price-item"><span>руук</span><span>1900₽</span></div>
+            <div class="price-item"><span>индастриал</span><span>3400₽</span></div>
+            <div class="price-item"><span>снаг</span><span>1800₽</span></div>
+            <div class="price-item"><span>форвард хеликс</span><span>2000₽</span></div>
+            <div class="price-item"><span>верт. хеликс/пина</span><span>1800₽</span></div>
             
             <div class="price-category">ТЕЛО</div>
             <div class="price-item"><span>пупок</span><span>2000₽</span></div>
             <div class="price-item"><span>соски (18+)</span><span>2100₽</span></div>
+            <div class="price-item"><span>Кристина (18+)</span><span>5000₽</span></div>
+            
+            <div class="price-category">МИКРОДЕРМАЛЫ</div>
+            <div class="price-item"><span>скула (с базой)</span><span>4000₽</span></div>
+            <div class="price-item"><span>лоб (с базой)</span><span>5000₽</span></div>
+            <div class="price-item"><span>яремная впадина</span><span>5000₽</span></div>
+            <div class="price-item"><span>удаление</span><span>1700₽</span></div>
+            <div class="price-item"><span>чистка</span><span>бесплатно</span></div>
+            <div class="price-hint">доплата за украшение от 700₽</div>
+            
+            <div class="price-category">ПРОЧЕЕ</div>
+            <div class="price-item"><span>онлайн консультация (моя работа)</span><span>бесплатно</span></div>
+            <div class="price-item"><span>онлайн консультация (не моя)</span><span>250₽</span></div>
+            <div class="price-item"><span>очная консультация</span><span>500₽</span></div>
+            <div class="price-item"><span>даунсайз/замена</span><span>500₽</span></div>
+            <div class="price-item"><span>лабрет титан (шарик)</span><span>500₽</span></div>
+            <div class="price-item"><span>лабрет титан (шипы)</span><span>550₽</span></div>
             
             <div class="price-info">
                 <p>бронь 300₽ возвращается при посещении</p>
@@ -119,25 +188,15 @@
         tg.expand();
 
         const staticSchedule = {
-            "2026-03-13": { status: "weekend" },
-            "2026-03-14": { status: "weekend" },
-            "2026-03-15": { status: "weekend" },
-            "2026-03-17": { status: "free", times: ["16:00"] },
-            "2026-03-18": { status: "free", times: ["17:00"] },
-            "2026-03-19": { status: "event", note: "интенсив" },
-            "2026-03-20": { status: "weekend" },
-            "2026-03-21": { status: "busy" },
-            "2026-03-22": { status: "weekend" },
-            "2026-03-23": { status: "weekend" },
-            "2026-03-24": { status: "weekend" },
-            "2026-03-25": { status: "free", times: ["16:00","17:00"] },
-            "2026-03-26": { status: "free", times: ["17:00"] },
+            "2026-03-24": { status: "free", times: ["16:00","17:00","18:00"] },
+            "2026-03-25": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-03-26": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
             "2026-03-27": { status: "weekend" },
-            "2026-03-28": { status: "busy" },
+            "2026-03-28": { status: "free", times: ["16:00","17:00","18:00"] },
             "2026-03-29": { status: "weekend" },
-            "2026-03-30": { status: "weekend" },
-            "2026-03-31": { status: "busy" },
-            "2026-04-01": { status: "busy" },
+            "2026-03-30": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-03-31": { status: "free", times: ["16:00","17:00","18:00"] },
+            "2026-04-01": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
             "2026-04-02": { status: "free", times: ["14:00","15:00","16:00","17:00","19:00","20:00"] },
             "2026-04-03": { status: "weekend" },
             "2026-04-04": { status: "event", note: "вах" },
@@ -254,13 +313,13 @@
 
         function updateTimeSlots(date) {
             const container = document.getElementById('time-slots');
-            const dateText = document.getElementById('selected-date-label');
+            const dateLabel = document.getElementById('selected-date-label');
             const staticData = staticSchedule[date];
             const bookedTimes = bookedSlots[date] || [];
             
             const dateObj = new Date(date);
             const dayName = dateObj.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
-            if (dateText) dateText.textContent = dayName;
+            if (dateLabel) dateLabel.textContent = 'время на ' + dayName;
             
             if (staticData && (staticData.status === "weekend" || staticData.status === "event" || staticData.status === "busy")) {
                 container.innerHTML = '<p class="no-slots">нет доступного времени</p>';
@@ -294,11 +353,8 @@
             document.getElementById('age-under').classList.toggle('active', age < 18);
             
             const warning = document.getElementById('age-warning');
-            if (age < 18) {
-                warning.style.display = 'block';
-            } else {
-                warning.style.display = 'none';
-            }
+            if (age < 18) warning.style.display = 'block';
+            else warning.style.display = 'none';
         }
 
         function showTab(name) {
@@ -316,6 +372,11 @@
             if (!service) return tg.showAlert("выбери услугу");
             if (!selectedDate) return tg.showAlert("выбери дату");
             if (!selectedTime) return tg.showAlert("выбери время");
+            
+            if (selectedAge === "до 18") {
+                tg.showAlert("до 18 лет только с письменным согласием родителей. принеси заполненную расписку на сеанс.");
+                return;
+            }
             
             updateSlotsAfterBooking(selectedDate, selectedTime);
             
