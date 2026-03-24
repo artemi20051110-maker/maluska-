@@ -117,10 +117,9 @@
             calendar.style.opacity = '0.5';
             
             try {
-                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now(), {
-                    cache: 'no-store',
-                    mode: 'no-cors'
-                });
+                const response = await fetch('https://winnie-sneakiest-unimaginatively.ngrok-free.app/slots?t=' + Date.now(), {
+    cache: 'no-store'
+});
                 
                 // При no-cors ответ opaque, читаем из localStorage
                 const cached = localStorage.getItem('bookedSlots_' + new Date().toDateString());
