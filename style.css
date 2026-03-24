@@ -79,3 +79,24 @@ textarea { min-height: 60px; resize: vertical; }
 .main-button:active { transform: scale(0.98); }
 .price-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333; font-size: 12px; }
 .price-item span:last-child { color: #cc3333; font-weight: 700; }
+.refresh-btn {
+    width: 100%;
+    padding: 10px;
+    background: #222;
+    border: 2px solid #444;
+    color: #ff6666;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 8px;
+    font-size: 12px;
+}
+.refresh-btn:active {
+    background: #330000;
+    border-color: #cc3333;
+}
+#last-update {
+    font-size: 9px;
+    color: #666;
+    margin-top: 4px;
+    text-align: center;
+}

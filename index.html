@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css?v=51">
+    <link rel="stylesheet" href="style.css?v=52">
     <title>МАЛЮСКА</title>
-    <meta http-equiv="Cache-Control" content="no-cache">
 </head>
 <body>
     <div class="container">
@@ -60,7 +59,8 @@
                     <span class="legend-item"><span class="dot busy"></span>занято</span>
                     <span class="legend-item"><span class="dot weekend"></span>выходной</span>
                 </div>
-                <button class="refresh-btn" onclick="loadBookedSlots()">🔄 обновить слоты</button>
+                <button class="refresh-btn" onclick="forceRefresh()">🔄 обновить слоты</button>
+                <p class="hint" id="last-update"></p>
             </div>
 
             <div class="form-group">
@@ -98,6 +98,7 @@
         let bookedSlots = {};
         tg.expand();
 
+        // 📅 ВЫХОДНЫЕ
         const staticSchedule = {
             "2026-03-13": { status: "weekend" },
             "2026-03-14": { status: "weekend" },
@@ -112,35 +113,80 @@
 
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
+        // 🔄 ЗАГРУЗКА СЛОТОВ (через API или кэш)
         async function loadBookedSlots() {
-            const calendar = document.getElementById('calendar');
-            calendar.style.opacity = '0.5';
+            const today = new Date().toDateString();
+            const cacheKey = 'bookedSlots_' + today;
             
             try {
-                const response = await fetch('https://winnie-sneakiest-unimaginatively.ngrok-free.app/slots?t=' + Date.now(), {
-    cache: 'no-store'
-});
+                // Пытаемся загрузить с сервера
+                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now(), {
+                    cache: 'no-store',
+                    mode: 'no-cors'
+                });
                 
-                // При no-cors ответ opaque, читаем из localStorage
-                const cached = localStorage.getItem('bookedSlots_' + new Date().toDateString());
+                // При no-cors не можем прочитать ответ, используем кэш
+                const cached = localStorage.getItem(cacheKey);
                 if (cached) {
                     bookedSlots = JSON.parse(cached);
                     console.log('📦 кэш:', bookedSlots);
                 }
             } catch (e) {
-                console.log('⚠️ API:', e);
-                const cached = localStorage.getItem('bookedSlots_' + new Date().toDateString());
+                console.log('⚠️ API недоступно');
+                const cached = localStorage.getItem(cacheKey);
                 if (cached) bookedSlots = JSON.parse(cached);
             }
             
-            calendar.style.opacity = '1';
             generateCalendar();
+            updateLastRefresh();
         }
 
-        // Сохраняем слоты после брони
-        tg.onEvent('mainButtonClicked', () => {
-            setTimeout(loadBookedSlots, 2000);
-        });
+        // Принудительное обновление (для админа)
+        async function forceRefresh() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.textContent = '⏳ загрузка...';
+            
+            const today = new Date().toDateString();
+            const cacheKey = 'bookedSlots_' + today;
+            
+            try {
+                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now(), {
+                    cache: 'no-store'
+                });
+                
+                if (response.ok) {
+                    bookedSlots = await response.json();
+                    localStorage.setItem(cacheKey, JSON.stringify(bookedSlots));
+                    console.log('✅ обновлено:', bookedSlots);
+                    alert('✅ слоты обновлены!');
+                }
+            } catch (e) {
+                alert('⚠️ не удалось обновить. используем кэш');
+            }
+            
+            btn.textContent = '🔄 обновить слоты';
+            generateCalendar();
+            updateLastRefresh();
+        }
+
+        function updateLastRefresh() {
+            const now = new Date();
+            document.getElementById('last-update').textContent = 
+                'обновлено: ' + now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+        }
+
+        // После брони обновляем кэш
+        function updateSlotsAfterBooking(date, time) {
+            const today = new Date().toDateString();
+            const cacheKey = 'bookedSlots_' + today;
+            
+            if (!bookedSlots[date]) bookedSlots[date] = [];
+            if (!bookedSlots[date].includes(time)) {
+                bookedSlots[date].push(time);
+                localStorage.setItem(cacheKey, JSON.stringify(bookedSlots));
+                console.log('✅ слот обновлён:', date, time);
+            }
+        }
 
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
@@ -259,6 +305,9 @@
             if (!selectedDate) return tg.showAlert("выбери дату!");
             if (!selectedTime) return tg.showAlert("выбери время!");
             
+            // Обновляем кэш ПОСЛЕ отправки брони
+            updateSlotsAfterBooking(selectedDate, selectedTime);
+            
             tg.sendData(JSON.stringify({
                 service, date: selectedDate, time: selectedTime,
                 age: selectedAge, comment: comment || '',
@@ -266,7 +315,7 @@
             }));
         }
 
-        // Загружаем слоты при старте и при возврате
+        // Загрузка при старте и при возврате
         loadBookedSlots();
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) loadBookedSlots();
