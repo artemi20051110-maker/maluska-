@@ -3,83 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=70">
-    <title>МАЛЮСКА | пирсинг студия</title>
+    <link rel="stylesheet" href="style.css?v=90">
+    <title>МАЛЮСКА</title>
     <meta http-equiv="Cache-Control" content="no-cache">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">🪡</div>
             <h1 class="title">МАЛЮСКА</h1>
             <p class="subtitle">пирсинг студия</p>
         </div>
         
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('booking')">📅 запись</button>
-            <button class="tab-btn" onclick="showTab('price')">💰 прайс</button>
+            <button class="tab-btn active" onclick="showTab('booking')">запись</button>
+            <button class="tab-btn" onclick="showTab('price')">прайс</button>
         </div>
 
         <div id="booking" class="tab-content active">
-            <!-- ВОЗРАСТ -->
             <div class="form-group">
-                <label>👤 возраст:</label>
+                <label>возраст</label>
                 <div class="age-selector">
                     <button class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
                     <button class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
                 </div>
                 <div class="age-warning" id="age-warning">
-                    ⚠️ до 18 лет только с письменным согласием родителей
+                    до 18 лет только с письменным согласием родителей
                 </div>
             </div>
 
-            <!-- УСЛУГА -->
             <div class="form-group">
-                <label>🪡 услуга:</label>
+                <label>услуга</label>
                 <select id="service_type">
                     <option value="">выбери услугу</option>
-                    <optgroup label="🔸 ЛИЦО">
-                        <option value="септум">септум — 1500₽</option>
-                        <option value="нострил">нострил — 1200₽</option>
-                        <option value="перегородка">перегородка — 1500₽</option>
-                        <option value="бридж">бридж — 1800₽</option>
-                        <option value="антибровь">антибровь — 1500₽</option>
-                        <option value="губа">губа — 1500₽</option>
-                        <option value="уздечка">уздечка — 1200₽</option>
-                    </optgroup>
-                    <optgroup label="🔸 УШИ">
-                        <option value="мочка">мочка — 800₽</option>
-                        <option value="хрящ">хрящ — 1200₽</option>
-                        <option value="индастриал">индастриал — 2500₽</option>
-                        <option value="конч">конч — 1500₽</option>
-                        <option value="дейс">дейс — 2000₽</option>
-                        <option value="форвард">форвард хеликс — 1500₽</option>
-                        <option value="хеликс">хеликс — 1200₽</option>
-                        <option value="трагус">трагус — 1200₽</option>
-                    </optgroup>
-                    <optgroup label="🔸 ТЕЛО">
-                        <option value="пупок">пупок — 2000₽</option>
-                        <option value="сосок">сосок — 2000₽</option>
-                        <option value="язык">язык — 2000₽</option>
-                        <option value="бровь">бровь — 1200₽</option>
-                        <option value="микродермал">микродермал — 2500₽</option>
-                        <option value="снятие">снятие — 500₽</option>
-                    </optgroup>
+                    <option value="септум">септум — 2600₽</option>
+                    <option value="нострил">нострил — 1800₽</option>
+                    <option value="бридж">бридж — 2100₽</option>
+                    <option value="бровь">бровь — 1800₽</option>
+                    <option value="губа">губа/лабрет — 1800₽</option>
+                    <option value="пупок">пупок — 2000₽</option>
+                    <option value="язык">язык — 1800₽</option>
+                    <option value="хрящ">хрящ — 1200₽</option>
+                    <option value="мочка">мочка — 800₽</option>
+                    <option value="индастриал">индастриал — 3400₽</option>
                 </select>
             </div>
 
-            <!-- КОММЕНТАРИЙ -->
             <div class="form-group">
-                <label>💬 комментарий:</label>
-                <div class="textarea-wrapper">
-                    <textarea id="comment" placeholder="боюсь боли, первый раз, аллергия..."></textarea>
-                    <span class="textarea-icon">✏️</span>
-                </div>
+                <label>комментарий</label>
+                <textarea id="comment" placeholder="необязательно"></textarea>
             </div>
 
-            <!-- КАЛЕНДАРЬ -->
             <div class="form-group">
-                <label>📅 дата:</label>
+                <label>дата</label>
                 <div class="calendar-wrapper">
                     <div class="calendar-grid" id="calendar"></div>
                 </div>
@@ -90,61 +65,46 @@
                 </div>
             </div>
 
-            <!-- ВРЕМЯ -->
             <div class="form-group">
-                <label>🕐 время на <span id="selected-date-text"></span>:</label>
+                <label>время</label>
                 <div class="time-slots" id="time-slots"></div>
             </div>
 
-            <!-- КНОПКА -->
-            <button class="main-button" onclick="sendData()">
-                <span class="btn-icon">🪡</span>
-                забронировать (300₽)
-            </button>
-            <p class="hint">💰 бронь возвращается при посещении</p>
+            <button class="main-button" onclick="sendData()">забронировать</button>
+            <p class="hint">бронь 300₽ возвращается при посещении</p>
         </div>
 
-        <!-- ПРАЙС -->
         <div id="price" class="tab-content">
-            <h2 class="price-title">💰 ПРАЙС-ЛИСТ</h2>
+            <h2 class="price-title">ПРАЙС-ЛИСТ</h2>
+            <p class="price-note">все цены с учётом базового титанового украшения</p>
             
-            <div class="price-category">
-                <span class="cat-icon">🔸</span> ЛИЦО
-            </div>
-            <div class="price-item"><span>септум</span><span>1500₽</span></div>
-            <div class="price-item"><span>нострил</span><span>1200₽</span></div>
-            <div class="price-item"><span>перегородка</span><span>1500₽</span></div>
-            <div class="price-item"><span>бридж</span><span>1800₽</span></div>
-            <div class="price-item"><span>антибровь</span><span>1500₽</span></div>
-            <div class="price-item"><span>губа</span><span>1500₽</span></div>
-            <div class="price-item"><span>уздечка</span><span>1200₽</span></div>
+            <div class="price-category">ЛИЦО</div>
+            <div class="price-item"><span>бридж</span><span>2100₽</span></div>
+            <div class="price-item"><span>губа/лабрет</span><span>1800₽</span></div>
+            <div class="price-item"><span>септум</span><span>2600₽</span></div>
+            <div class="price-item"><span>бровь</span><span>1800₽</span></div>
+            <div class="price-item"><span>нострил</span><span>1800₽</span></div>
+            <div class="price-item"><span>щека</span><span>3000₽</span></div>
             
-            <div class="price-category">
-                <span class="cat-icon">🔸</span> УШИ
-            </div>
-            <div class="price-item"><span>мочка</span><span>800₽</span></div>
+            <div class="price-category">РОТ</div>
+            <div class="price-item"><span>язык</span><span>1800₽</span></div>
+            <div class="price-item"><span>смайл</span><span>1800₽</span></div>
+            
+            <div class="price-category">УШИ</div>
+            <div class="price-item"><span>мочка</span><span>1400₽</span></div>
             <div class="price-item"><span>хрящ</span><span>1200₽</span></div>
-            <div class="price-item"><span>индастриал</span><span>2500₽</span></div>
-            <div class="price-item"><span>конч</span><span>1500₽</span></div>
+            <div class="price-item"><span>индастриал</span><span>3400₽</span></div>
+            <div class="price-item"><span>конч</span><span>1800₽</span></div>
             <div class="price-item"><span>дейс</span><span>2000₽</span></div>
-            <div class="price-item"><span>форвард хеликс</span><span>1500₽</span></div>
-            <div class="price-item"><span>хеликс</span><span>1200₽</span></div>
-            <div class="price-item"><span>трагус</span><span>1200₽</span></div>
+            <div class="price-item"><span>трагус</span><span>2000₽</span></div>
             
-            <div class="price-category">
-                <span class="cat-icon">🔸</span> ТЕЛО
-            </div>
+            <div class="price-category">ТЕЛО</div>
             <div class="price-item"><span>пупок</span><span>2000₽</span></div>
-            <div class="price-item"><span>сосок</span><span>2000₽</span></div>
-            <div class="price-item"><span>язык</span><span>2000₽</span></div>
-            <div class="price-item"><span>бровь</span><span>1200₽</span></div>
-            <div class="price-item"><span>микродермал</span><span>2500₽</span></div>
-            <div class="price-item"><span>снятие</span><span>500₽</span></div>
+            <div class="price-item"><span>соски (18+)</span><span>2100₽</span></div>
             
             <div class="price-info">
-                <p>💰 бронь 300₽ возвращается при посещении</p>
-                <p>🪡 украшение оплачивается отдельно</p>
-                <p>⚠️ до 18 лет только с согласия родителей</p>
+                <p>бронь 300₽ возвращается при посещении</p>
+                <p>до 18 лет только с согласия родителей</p>
             </div>
         </div>
     </div>
@@ -158,9 +118,7 @@
         let bookedSlots = {};
         tg.expand();
 
-        // 📅 РАСПИСАНИЕ МАРТ + АПРЕЛЬ 2026
         const staticSchedule = {
-            // МАРТ
             "2026-03-13": { status: "weekend" },
             "2026-03-14": { status: "weekend" },
             "2026-03-15": { status: "weekend" },
@@ -169,7 +127,7 @@
             "2026-03-19": { status: "event", note: "интенсив" },
             "2026-03-20": { status: "weekend" },
             "2026-03-21": { status: "busy" },
-            "2026-03-22": { status: "weekend", note: "тату" },
+            "2026-03-22": { status: "weekend" },
             "2026-03-23": { status: "weekend" },
             "2026-03-24": { status: "weekend" },
             "2026-03-25": { status: "free", times: ["16:00","17:00"] },
@@ -179,8 +137,6 @@
             "2026-03-29": { status: "weekend" },
             "2026-03-30": { status: "weekend" },
             "2026-03-31": { status: "busy" },
-            
-            // АПРЕЛЬ
             "2026-04-01": { status: "busy" },
             "2026-04-02": { status: "free", times: ["14:00","15:00","16:00","17:00","19:00","20:00"] },
             "2026-04-03": { status: "weekend" },
@@ -219,20 +175,14 @@
             const today = new Date().toDateString();
             const cacheKey = 'bookedSlots_' + today;
             const cached = localStorage.getItem(cacheKey);
-            
-            if (cached) {
-                bookedSlots = JSON.parse(cached);
-            } else {
-                bookedSlots = {};
-            }
-            
+            if (cached) bookedSlots = JSON.parse(cached);
+            else bookedSlots = {};
             generateCalendar();
         }
 
         function updateSlotsAfterBooking(date, time) {
             const today = new Date().toDateString();
             const cacheKey = 'bookedSlots_' + today;
-            
             if (!bookedSlots[date]) bookedSlots[date] = [];
             if (!bookedSlots[date].includes(time)) {
                 bookedSlots[date].push(time);
@@ -268,25 +218,25 @@
                 if (staticData) {
                     statusClass = staticData.status;
                     if (staticData.status === "weekend") statusText = "вых";
-                    else if (staticData.status === "event") statusText = staticData.note || "событие";
-                    else if (staticData.status === "busy") statusText = "нет окон";
-                    else if (staticData.times) statusText = staticData.times.length + " слотов";
+                    else if (staticData.status === "event") statusText = staticData.note;
+                    else if (staticData.status === "busy") statusText = "нет";
+                    else if (staticData.times) statusText = staticData.times.length;
                 } else if (bookedTimes.length >= defaultTimes.length) {
                     statusClass = "busy";
-                    statusText = "нет окон";
+                    statusText = "нет";
                 } else if (bookedTimes.length > 0) {
                     statusClass = "free";
-                    statusText = (defaultTimes.length - bookedTimes.length) + " слотов";
+                    statusText = defaultTimes.length - bookedTimes.length;
                 } else {
                     statusClass = "free";
-                    statusText = "5 слотов";
+                    statusText = "5";
                 }
                 
                 html += `<div class="cal-day ${isToday?'today':''} ${statusClass}" 
                     data-date="${dateStr}" onclick="selectDate('${dateStr}')">
-                    <div class="cal-d">${dayName}</div>
                     <div class="cal-n">${dayNum}</div>
                     <div class="cal-m">${month}</div>
+                    <div class="cal-d">${dayName}</div>
                     <div class="cal-status">${statusText}</div>
                 </div>`;
             }
@@ -304,16 +254,16 @@
 
         function updateTimeSlots(date) {
             const container = document.getElementById('time-slots');
-            const dateText = document.getElementById('selected-date-text');
+            const dateText = document.getElementById('selected-date-label');
             const staticData = staticSchedule[date];
             const bookedTimes = bookedSlots[date] || [];
             
             const dateObj = new Date(date);
-            const dayName = dateObj.toLocaleDateString('ru-RU', { weekday: 'long' });
-            dateText.textContent = `${dayName}, ${date}`;
+            const dayName = dateObj.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+            if (dateText) dateText.textContent = dayName;
             
             if (staticData && (staticData.status === "weekend" || staticData.status === "event" || staticData.status === "busy")) {
-                container.innerHTML = '<p class="no-slots">❌ нет доступного времени</p>';
+                container.innerHTML = '<p class="no-slots">нет доступного времени</p>';
                 return;
             }
             
@@ -321,7 +271,7 @@
             availableTimes = availableTimes.filter(t => !bookedTimes.includes(t));
             
             if (availableTimes.length === 0) {
-                container.innerHTML = '<p class="no-slots">❌ все слоты заняты</p>';
+                container.innerHTML = '<p class="no-slots">все слоты заняты</p>';
                 return;
             }
             
@@ -336,7 +286,6 @@
             selectedTime = time;
             document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
             event.target.classList.add('selected');
-            tg.HapticFeedback.impactOccurred('light');
         }
 
         function setAge(age) {
@@ -344,15 +293,12 @@
             document.getElementById('age-18').classList.toggle('active', age >= 18);
             document.getElementById('age-under').classList.toggle('active', age < 18);
             
-            // Показываем предупреждение для несовершеннолетних
             const warning = document.getElementById('age-warning');
             if (age < 18) {
                 warning.style.display = 'block';
             } else {
                 warning.style.display = 'none';
             }
-            
-            tg.HapticFeedback.impactOccurred('light');
         }
 
         function showTab(name) {
@@ -366,18 +312,12 @@
             const service = document.getElementById('service_type').value;
             const comment = document.getElementById('comment').value;
             
-            if (!selectedAge) return tg.showAlert("выбери возраст!");
-            if (!service) return tg.showAlert("выбери услугу!");
-            if (!selectedDate) return tg.showAlert("выбери дату!");
-            if (!selectedTime) return tg.showAlert("выбери время!");
-            
-            if (selectedAge === "до 18") {
-                tg.showAlert("⚠️ до 18 лет только с письменным согласием родителей!\n\nПринеси заполненную расписку на сеанс.");
-                return;
-            }
+            if (!selectedAge) return tg.showAlert("выбери возраст");
+            if (!service) return tg.showAlert("выбери услугу");
+            if (!selectedDate) return tg.showAlert("выбери дату");
+            if (!selectedTime) return tg.showAlert("выбери время");
             
             updateSlotsAfterBooking(selectedDate, selectedTime);
-            tg.HapticFeedback.notificationOccurred('success');
             
             tg.sendData(JSON.stringify({
                 service,
@@ -394,8 +334,8 @@
         });
         
         loadBookedSlots();
-        tg.setHeaderColor('#1a0000');
-        tg.setBackgroundColor('#1a0000');
+        tg.setHeaderColor('#1a1a1a');
+        tg.setBackgroundColor('#1a1a1a');
     </script>
 </body>
 </html>
