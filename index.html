@@ -2,14 +2,18 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css?v=52">
-    <title>МАЛЮСКА</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="style.css?v=70">
+    <title>МАЛЮСКА | пирсинг студия</title>
+    <meta http-equiv="Cache-Control" content="no-cache">
 </head>
 <body>
     <div class="container">
-        <h1 class="title">МАЛЮСКА</h1>
-        <p class="subtitle">пирсинг студия</p>
+        <div class="header">
+            <div class="logo">🪡</div>
+            <h1 class="title">МАЛЮСКА</h1>
+            <p class="subtitle">пирсинг студия</p>
+        </div>
         
         <div class="tabs">
             <button class="tab-btn active" onclick="showTab('booking')">📅 запись</button>
@@ -17,40 +21,65 @@
         </div>
 
         <div id="booking" class="tab-content active">
+            <!-- ВОЗРАСТ -->
             <div class="form-group">
-                <label>возраст:</label>
+                <label>👤 возраст:</label>
                 <div class="age-selector">
                     <button class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
                     <button class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
                 </div>
+                <div class="age-warning" id="age-warning">
+                    ⚠️ до 18 лет только с письменным согласием родителей
+                </div>
             </div>
 
+            <!-- УСЛУГА -->
             <div class="form-group">
-                <label>услуга:</label>
+                <label>🪡 услуга:</label>
                 <select id="service_type">
                     <option value="">выбери услугу</option>
-                    <option value="септум">септум — 1500₽</option>
-                    <option value="нострил">нострил — 1200₽</option>
-                    <option value="бридж">бридж — 1800₽</option>
-                    <option value="мочка">мочка — 800₽</option>
-                    <option value="хрящ">хрящ — 1200₽</option>
-                    <option value="пупок">пупок — 2000₽</option>
-                    <option value="индастриал">индастриал — 2500₽</option>
-                    <option value="конч">конч — 1500₽</option>
-                    <option value="дейс">дейс — 2000₽</option>
-                    <option value="антибровь">антибровь — 1500₽</option>
-                    <option value="губа">губа — 1500₽</option>
-                    <option value="язык">язык — 2000₽</option>
+                    <optgroup label="🔸 ЛИЦО">
+                        <option value="септум">септум — 1500₽</option>
+                        <option value="нострил">нострил — 1200₽</option>
+                        <option value="перегородка">перегородка — 1500₽</option>
+                        <option value="бридж">бридж — 1800₽</option>
+                        <option value="антибровь">антибровь — 1500₽</option>
+                        <option value="губа">губа — 1500₽</option>
+                        <option value="уздечка">уздечка — 1200₽</option>
+                    </optgroup>
+                    <optgroup label="🔸 УШИ">
+                        <option value="мочка">мочка — 800₽</option>
+                        <option value="хрящ">хрящ — 1200₽</option>
+                        <option value="индастриал">индастриал — 2500₽</option>
+                        <option value="конч">конч — 1500₽</option>
+                        <option value="дейс">дейс — 2000₽</option>
+                        <option value="форвард">форвард хеликс — 1500₽</option>
+                        <option value="хеликс">хеликс — 1200₽</option>
+                        <option value="трагус">трагус — 1200₽</option>
+                    </optgroup>
+                    <optgroup label="🔸 ТЕЛО">
+                        <option value="пупок">пупок — 2000₽</option>
+                        <option value="сосок">сосок — 2000₽</option>
+                        <option value="язык">язык — 2000₽</option>
+                        <option value="бровь">бровь — 1200₽</option>
+                        <option value="микродермал">микродермал — 2500₽</option>
+                        <option value="снятие">снятие — 500₽</option>
+                    </optgroup>
                 </select>
             </div>
 
+            <!-- КОММЕНТАРИЙ -->
             <div class="form-group">
-                <label>комментарий:</label>
-                <textarea id="comment" placeholder="боюсь боли, первый раз..."></textarea>
+                <label>💬 комментарий:</label>
+                <div class="textarea-wrapper">
+                    <textarea id="comment" placeholder="боюсь боли, первый раз, аллергия..."></textarea>
+                    <span class="textarea-icon">✏️</span>
+                </div>
             </div>
 
+            <!-- КАЛЕНДАРЬ -->
             <div class="form-group">
-                <label>дата:</label>
+                <label>📅 дата:</label>
                 <div class="calendar-wrapper">
                     <div class="calendar-grid" id="calendar"></div>
                 </div>
@@ -59,33 +88,64 @@
                     <span class="legend-item"><span class="dot busy"></span>занято</span>
                     <span class="legend-item"><span class="dot weekend"></span>выходной</span>
                 </div>
-                <button class="refresh-btn" onclick="forceRefresh()">🔄 обновить слоты</button>
-                <p class="hint" id="last-update"></p>
             </div>
 
+            <!-- ВРЕМЯ -->
             <div class="form-group">
-                <label>время на <span id="selected-date-text"></span>:</label>
+                <label>🕐 время на <span id="selected-date-text"></span>:</label>
                 <div class="time-slots" id="time-slots"></div>
             </div>
 
-            <button class="main-button" onclick="sendData()">забронировать (300₽)</button>
-            <p class="hint">💰 бронь возвращается</p>
+            <!-- КНОПКА -->
+            <button class="main-button" onclick="sendData()">
+                <span class="btn-icon">🪡</span>
+                забронировать (300₽)
+            </button>
+            <p class="hint">💰 бронь возвращается при посещении</p>
         </div>
 
+        <!-- ПРАЙС -->
         <div id="price" class="tab-content">
-            <h2>💰 ПРАЙС</h2>
+            <h2 class="price-title">💰 ПРАЙС-ЛИСТ</h2>
+            
+            <div class="price-category">
+                <span class="cat-icon">🔸</span> ЛИЦО
+            </div>
             <div class="price-item"><span>септум</span><span>1500₽</span></div>
             <div class="price-item"><span>нострил</span><span>1200₽</span></div>
+            <div class="price-item"><span>перегородка</span><span>1500₽</span></div>
             <div class="price-item"><span>бридж</span><span>1800₽</span></div>
+            <div class="price-item"><span>антибровь</span><span>1500₽</span></div>
+            <div class="price-item"><span>губа</span><span>1500₽</span></div>
+            <div class="price-item"><span>уздечка</span><span>1200₽</span></div>
+            
+            <div class="price-category">
+                <span class="cat-icon">🔸</span> УШИ
+            </div>
             <div class="price-item"><span>мочка</span><span>800₽</span></div>
             <div class="price-item"><span>хрящ</span><span>1200₽</span></div>
-            <div class="price-item"><span>пупок</span><span>2000₽</span></div>
             <div class="price-item"><span>индастриал</span><span>2500₽</span></div>
             <div class="price-item"><span>конч</span><span>1500₽</span></div>
             <div class="price-item"><span>дейс</span><span>2000₽</span></div>
-            <div class="price-item"><span>антибровь</span><span>1500₽</span></div>
-            <div class="price-item"><span>губа</span><span>1500₽</span></div>
+            <div class="price-item"><span>форвард хеликс</span><span>1500₽</span></div>
+            <div class="price-item"><span>хеликс</span><span>1200₽</span></div>
+            <div class="price-item"><span>трагус</span><span>1200₽</span></div>
+            
+            <div class="price-category">
+                <span class="cat-icon">🔸</span> ТЕЛО
+            </div>
+            <div class="price-item"><span>пупок</span><span>2000₽</span></div>
+            <div class="price-item"><span>сосок</span><span>2000₽</span></div>
             <div class="price-item"><span>язык</span><span>2000₽</span></div>
+            <div class="price-item"><span>бровь</span><span>1200₽</span></div>
+            <div class="price-item"><span>микродермал</span><span>2500₽</span></div>
+            <div class="price-item"><span>снятие</span><span>500₽</span></div>
+            
+            <div class="price-info">
+                <p>💰 бронь 300₽ возвращается при посещении</p>
+                <p>🪡 украшение оплачивается отдельно</p>
+                <p>⚠️ до 18 лет только с согласия родителей</p>
+            </div>
         </div>
     </div>
 
@@ -98,84 +158,77 @@
         let bookedSlots = {};
         tg.expand();
 
-        // 📅 ВЫХОДНЫЕ
+        // 📅 РАСПИСАНИЕ МАРТ + АПРЕЛЬ 2026
         const staticSchedule = {
+            // МАРТ
             "2026-03-13": { status: "weekend" },
             "2026-03-14": { status: "weekend" },
             "2026-03-15": { status: "weekend" },
+            "2026-03-17": { status: "free", times: ["16:00"] },
+            "2026-03-18": { status: "free", times: ["17:00"] },
             "2026-03-19": { status: "event", note: "интенсив" },
             "2026-03-20": { status: "weekend" },
+            "2026-03-21": { status: "busy" },
             "2026-03-22": { status: "weekend", note: "тату" },
             "2026-03-23": { status: "weekend" },
             "2026-03-24": { status: "weekend" },
-            "2026-03-27": { status: "weekend" }
+            "2026-03-25": { status: "free", times: ["16:00","17:00"] },
+            "2026-03-26": { status: "free", times: ["17:00"] },
+            "2026-03-27": { status: "weekend" },
+            "2026-03-28": { status: "busy" },
+            "2026-03-29": { status: "weekend" },
+            "2026-03-30": { status: "weekend" },
+            "2026-03-31": { status: "busy" },
+            
+            // АПРЕЛЬ
+            "2026-04-01": { status: "busy" },
+            "2026-04-02": { status: "free", times: ["14:00","15:00","16:00","17:00","19:00","20:00"] },
+            "2026-04-03": { status: "weekend" },
+            "2026-04-04": { status: "event", note: "вах" },
+            "2026-04-05": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-06": { status: "free", times: ["15:00","16:00","17:00","18:00","19:00"] },
+            "2026-04-07": { status: "weekend" },
+            "2026-04-08": { status: "weekend" },
+            "2026-04-09": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-10": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-11": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-12": { status: "weekend" },
+            "2026-04-13": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-14": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-15": { status: "weekend" },
+            "2026-04-16": { status: "event", note: "тату" },
+            "2026-04-17": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-18": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-19": { status: "weekend" },
+            "2026-04-20": { status: "weekend" },
+            "2026-04-21": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-22": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-23": { status: "weekend" },
+            "2026-04-24": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-25": { status: "weekend" },
+            "2026-04-26": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-27": { status: "weekend" },
+            "2026-04-28": { status: "weekend" },
+            "2026-04-29": { status: "free", times: ["16:00","17:00","18:00","19:00"] },
+            "2026-04-30": { status: "free", times: ["16:00","17:00","18:00","19:00"] }
         };
 
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
-        // 🔄 ЗАГРУЗКА СЛОТОВ (через API или кэш)
-        async function loadBookedSlots() {
+        function loadBookedSlots() {
             const today = new Date().toDateString();
             const cacheKey = 'bookedSlots_' + today;
+            const cached = localStorage.getItem(cacheKey);
             
-            try {
-                // Пытаемся загрузить с сервера
-                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now(), {
-                    cache: 'no-store',
-                    mode: 'no-cors'
-                });
-                
-                // При no-cors не можем прочитать ответ, используем кэш
-                const cached = localStorage.getItem(cacheKey);
-                if (cached) {
-                    bookedSlots = JSON.parse(cached);
-                    console.log('📦 кэш:', bookedSlots);
-                }
-            } catch (e) {
-                console.log('⚠️ API недоступно');
-                const cached = localStorage.getItem(cacheKey);
-                if (cached) bookedSlots = JSON.parse(cached);
+            if (cached) {
+                bookedSlots = JSON.parse(cached);
+            } else {
+                bookedSlots = {};
             }
             
             generateCalendar();
-            updateLastRefresh();
         }
 
-        // Принудительное обновление (для админа)
-        async function forceRefresh() {
-            const btn = document.querySelector('.refresh-btn');
-            btn.textContent = '⏳ загрузка...';
-            
-            const today = new Date().toDateString();
-            const cacheKey = 'bookedSlots_' + today;
-            
-            try {
-                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now(), {
-                    cache: 'no-store'
-                });
-                
-                if (response.ok) {
-                    bookedSlots = await response.json();
-                    localStorage.setItem(cacheKey, JSON.stringify(bookedSlots));
-                    console.log('✅ обновлено:', bookedSlots);
-                    alert('✅ слоты обновлены!');
-                }
-            } catch (e) {
-                alert('⚠️ не удалось обновить. используем кэш');
-            }
-            
-            btn.textContent = '🔄 обновить слоты';
-            generateCalendar();
-            updateLastRefresh();
-        }
-
-        function updateLastRefresh() {
-            const now = new Date();
-            document.getElementById('last-update').textContent = 
-                'обновлено: ' + now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
-        }
-
-        // После брони обновляем кэш
         function updateSlotsAfterBooking(date, time) {
             const today = new Date().toDateString();
             const cacheKey = 'bookedSlots_' + today;
@@ -184,7 +237,6 @@
             if (!bookedSlots[date].includes(time)) {
                 bookedSlots[date].push(time);
                 localStorage.setItem(cacheKey, JSON.stringify(bookedSlots));
-                console.log('✅ слот обновлён:', date, time);
             }
         }
 
@@ -198,7 +250,7 @@
             days.forEach(d => html += `<div class="cal-h">${d}</div>`);
             html += '</div><div class="cal-row">';
 
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 45; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() + i);
                 const dateStr = date.toISOString().split('T')[0];
@@ -217,6 +269,8 @@
                     statusClass = staticData.status;
                     if (staticData.status === "weekend") statusText = "вых";
                     else if (staticData.status === "event") statusText = staticData.note || "событие";
+                    else if (staticData.status === "busy") statusText = "нет окон";
+                    else if (staticData.times) statusText = staticData.times.length + " слотов";
                 } else if (bookedTimes.length >= defaultTimes.length) {
                     statusClass = "busy";
                     statusText = "нет окон";
@@ -225,7 +279,7 @@
                     statusText = (defaultTimes.length - bookedTimes.length) + " слотов";
                 } else {
                     statusClass = "free";
-                    statusText = defaultTimes.length + " слотов";
+                    statusText = "5 слотов";
                 }
                 
                 html += `<div class="cal-day ${isToday?'today':''} ${statusClass}" 
@@ -258,15 +312,16 @@
             const dayName = dateObj.toLocaleDateString('ru-RU', { weekday: 'long' });
             dateText.textContent = `${dayName}, ${date}`;
             
-            if (staticData && (staticData.status === "weekend" || staticData.status === "event")) {
-                container.innerHTML = '<p class="no-slots">❌ нет времени</p>';
+            if (staticData && (staticData.status === "weekend" || staticData.status === "event" || staticData.status === "busy")) {
+                container.innerHTML = '<p class="no-slots">❌ нет доступного времени</p>';
                 return;
             }
             
-            const availableTimes = defaultTimes.filter(t => !bookedTimes.includes(t));
+            let availableTimes = staticData && staticData.times ? staticData.times : [...defaultTimes];
+            availableTimes = availableTimes.filter(t => !bookedTimes.includes(t));
             
             if (availableTimes.length === 0) {
-                container.innerHTML = '<p class="no-slots">❌ все заняты</p>';
+                container.innerHTML = '<p class="no-slots">❌ все слоты заняты</p>';
                 return;
             }
             
@@ -281,12 +336,23 @@
             selectedTime = time;
             document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
             event.target.classList.add('selected');
+            tg.HapticFeedback.impactOccurred('light');
         }
 
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
             document.getElementById('age-18').classList.toggle('active', age >= 18);
             document.getElementById('age-under').classList.toggle('active', age < 18);
+            
+            // Показываем предупреждение для несовершеннолетних
+            const warning = document.getElementById('age-warning');
+            if (age < 18) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
+            
+            tg.HapticFeedback.impactOccurred('light');
         }
 
         function showTab(name) {
@@ -305,22 +371,29 @@
             if (!selectedDate) return tg.showAlert("выбери дату!");
             if (!selectedTime) return tg.showAlert("выбери время!");
             
-            // Обновляем кэш ПОСЛЕ отправки брони
+            if (selectedAge === "до 18") {
+                tg.showAlert("⚠️ до 18 лет только с письменным согласием родителей!\n\nПринеси заполненную расписку на сеанс.");
+                return;
+            }
+            
             updateSlotsAfterBooking(selectedDate, selectedTime);
+            tg.HapticFeedback.notificationOccurred('success');
             
             tg.sendData(JSON.stringify({
-                service, date: selectedDate, time: selectedTime,
-                age: selectedAge, comment: comment || '',
+                service,
+                date: selectedDate,
+                time: selectedTime,
+                age: selectedAge,
+                comment: comment || '',
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
         }
 
-        // Загрузка при старте и при возврате
-        loadBookedSlots();
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) loadBookedSlots();
         });
         
+        loadBookedSlots();
         tg.setHeaderColor('#1a0000');
         tg.setBackgroundColor('#1a0000');
     </script>
