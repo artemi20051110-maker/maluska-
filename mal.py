@@ -22,6 +22,9 @@ PAYMENT_PHONE = os.getenv("PAYMENT_PHONE", "+7 (999) 123-45-67")
 STUDIO_ADDRESS = os.getenv("STUDIO_ADDRESS", "г. Екатеринбург, ул. Шейкмана 24")
 MASTER_USERNAME = os.getenv("MASTER_USERNAME", "@shilgalvas")
 
+# 🔥 ЕКАТЕРИНБУРГ GMT+5
+TZ_OFFSET = timedelta(hours=5)
+
 ANATOMY_PIERCINGS = ["пупок", "индастриал", "дейс", "антибровь", "язык", "губа", "бридж"]
 
 print(f"✅ токен: {API_TOKEN[:20]}...")
@@ -141,10 +144,10 @@ async def start(message: types.Message):
     
     text = (
         f"привет! это запись к малюске на пирсинг.\n\n"
-        f"🩸 жми внизу чтобы записаться\n"
-        f"💰 бронь 300₽ (возвращается)\n"
-        f"📱 оплата: {PAYMENT_PHONE}\n"
-        f"⏰ после записи отправь чек"
+        f"жми внизу чтобы записаться\n"
+        f"бронь 300₽ (возвращается)\n"
+        f"оплата: {PAYMENT_PHONE}\n"
+        f"после записи отправь чек"
     )
     
     await message.answer(text, reply_markup=main_kb)
@@ -152,7 +155,7 @@ async def start(message: types.Message):
 
 @dp.message(F.text == "🛠 поддержка / админ")
 async def support(message: types.Message):
-    await message.answer(f"🆘 пиши: {MASTER_USERNAME}")
+    await message.answer(f"пиши: {MASTER_USERNAME}")
 
 @dp.message(Command("all_users"))
 async def show_all_users(message: types.Message):
@@ -178,7 +181,7 @@ async def show_bookings(message: types.Message):
     if not rows:
         await message.answer("броней нет")
         return
-    resp = "📋 БРОНИ:\n\n"
+    resp = "БРОНИ:\n\n"
     for r in rows:
         icon = "✅" if r[6] == "paid" else "⏳"
         resp += f"{icon} #{r[0]} | {r[1]} | {r[2]} {r[3]} | {r[4]}\n"
@@ -197,7 +200,7 @@ async def show_history(message: types.Message):
     if not history:
         await message.answer(f"у {user_id} нет броней")
         return
-    resp = f"📋 ИСТОРИЯ {user_id}:\n\n"
+    resp = f"ИСТОРИЯ {user_id}:\n\n"
     for h in history:
         resp += f"#{h[0]} | {h[1]} | {h[2]} {h[3]} | {h[4]} | {h[5]}\n"
     await message.answer(resp)
@@ -248,8 +251,9 @@ async def web_app_handler(message: types.Message):
         date = data.get('date')
         time = data.get('time')
         
+        # 🔥 ПРОВЕРКА ЗАНЯТОСТИ СЛОТА
         if not is_slot_available(date, time):
-            await message.answer("❌ время занято!")
+            await message.answer("❌ это время уже занято! выбери другое")
             return
         
         user_name = data.get('username', message.from_user.first_name or 'клиент')
@@ -347,16 +351,16 @@ async def confirm_payment(callback: types.CallbackQuery):
         cursor.execute("UPDATE bookings SET payment_status = 'paid', status = 'confirmed' WHERE id = ?", (booking_id,))
         conn.commit()
         
-        guide_path = "guide.jpg"
+        guide_path = "/root/maluska/guide.jpg"
         if os.path.exists(guide_path):
             await bot.send_photo(
                 booking[0],
                 photo=FSInputFile(guide_path),
-                caption=f"✅ БРОНЬ #{booking_id} ПОДТВЕРЖДЕНА!\n\n📅 {booking[1]} в {booking[2]}\n💉 {booking[3]}\n\n📍 {STUDIO_ADDRESS}\n🗺 вход со стороны Попова\n\n⚡️ напоминание за 2 часа"
+                caption=f"✅ БРОНЬ #{booking_id} ПОДТВЕРЖДЕНА!\n\n📅 {booking[1]} в {booking[2]}\n💉 {booking[3]}\n\n📍 {STUDIO_ADDRESS}\n🗺 вход со стороны Попова"
             )
         else:
             await bot.send_message(booking[0], 
-                f"✅ БРОНЬ #{booking_id} ПОДТВЕРЖДЕНА!\n\n📅 {booking[1]} в {booking[2]}\n💉 {booking[3]}\n\n📍 {STUDIO_ADDRESS}\n🗺 вход со стороны Попова\n\n⚡️ напоминание за 2 часа"
+                f"✅ БРОНЬ #{booking_id} ПОДТВЕРЖДЕНА!\n\n📅 {booking[1]} в {booking[2]}\n💉 {booking[3]}\n\n📍 {STUDIO_ADDRESS}\n🗺 вход со стороны Попова"
             )
         
         try:
@@ -371,11 +375,13 @@ async def confirm_payment(callback: types.CallbackQuery):
 
 @dp.callback_query(F.data.startswith("cancel_"))
 async def cancel_booking(callback: types.CallbackQuery):
+    # ✅ ИСПРАВЛЕНИЕ: проверяем что админ нажимает
     if callback.from_user.id != MY_ID:
         await callback.answer("❌ не твоё", show_alert=True)
         return
     
     booking_id = int(callback.data.split("_")[1])
+    logger.info(f"❌ отмена брони #{booking_id}")
     
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -418,15 +424,19 @@ async def handle_text(message: types.Message):
     await bot.send_message(MY_ID, f"📨 @{message.from_user.username or 'без_ника'}\n{message.text}")
     await message.answer("отправлено! жди ответа")
 
+# 🔥 ИСПРАВЛЕНИЕ: НАПОМИНАНИЯ ПО ЕКАТЕРИНБУРГУ (GMT+5)
 async def check_reminders():
     while True:
         try:
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
             
-            now = datetime.now()
+            # 🔥 ВРЕМЯ ЕКАТЕРИНБУРГА (GMT+5)
+            now = datetime.now() + TZ_OFFSET
             target_time = (now + timedelta(hours=2)).strftime("%H:%M")
             target_date = now.strftime("%Y-%m-%d")
+            
+            logger.info(f"🔔 проверка напоминаний: {target_date} {target_time}")
             
             cursor.execute("""
                 SELECT user_id, user_name, booking_time, id FROM bookings 
@@ -443,6 +453,7 @@ async def check_reminders():
                     reply_markup=reminder_kb(b_id)
                 )
                 cursor.execute("UPDATE bookings SET reminder_sent = 1 WHERE id = ?", (b_id,))
+                logger.info(f"🔔 напоминание отправлено {user_id}")
             
             conn.commit()
             conn.close()
@@ -453,6 +464,7 @@ async def check_reminders():
 
 async def main():
     logger.info("🚀 ЗАПУСК...")
+    logger.info(f"🕐 часовой пояс: GMT+5 (Екатеринбург)")
     init_db()
     asyncio.create_task(check_reminders())
     logger.info(f"ADMIN_CHANNEL_ID={ADMIN_CHANNEL_ID}, MY_ID={MY_ID}")

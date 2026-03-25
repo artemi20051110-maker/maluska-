@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=100">
+    <link rel="stylesheet" href="style.css?v=130">
     <title>МАЛЮСКА</title>
 </head>
 <body>
@@ -25,7 +25,6 @@
                     <button class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
                     <button class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
                 </div>
-                <div class="age-warning" id="age-warning">до 18 лет только с письменным согласием родителей</div>
             </div>
 
             <div class="form-group">
@@ -108,7 +107,6 @@
             </div>
 
             <button class="main-button" onclick="sendData()">забронировать</button>
-            <p class="hint">бронь 300₽ возвращается при посещении</p>
         </div>
 
         <div id="price" class="tab-content">
@@ -173,7 +171,6 @@
             
             <div class="price-info">
                 <p>бронь 300₽ возвращается при посещении</p>
-                <p>до 18 лет только с согласия родителей</p>
             </div>
         </div>
     </div>
@@ -351,10 +348,6 @@
             selectedAge = age >= 18 ? "18+" : "до 18";
             document.getElementById('age-18').classList.toggle('active', age >= 18);
             document.getElementById('age-under').classList.toggle('active', age < 18);
-            
-            const warning = document.getElementById('age-warning');
-            if (age < 18) warning.style.display = 'block';
-            else warning.style.display = 'none';
         }
 
         function showTab(name) {
@@ -373,8 +366,11 @@
             if (!selectedDate) return tg.showAlert("выбери дату");
             if (!selectedTime) return tg.showAlert("выбери время");
             
-            if (selectedAge === "до 18") {
-                tg.showAlert("до 18 лет только с письменным согласием родителей. принеси заполненную расписку на сеанс.");
+            // 🔥 ПРОВЕРКА ЧТО ВРЕМЯ ЕЩЁ СВОБОДНО
+            const bookedTimes = bookedSlots[selectedDate] || [];
+            if (bookedTimes.includes(selectedTime)) {
+                tg.showAlert("❌ это время только что заняли! выбери другое");
+                loadBookedSlots();
                 return;
             }
             
@@ -388,6 +384,11 @@
                 comment: comment || '',
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
+            
+            // 🔥 ПЕРЕЗАГРУЗКА ПОСЛЕ БРОНИ
+            setTimeout(() => {
+                loadBookedSlots();
+            }, 2000);
         }
 
         document.addEventListener('visibilitychange', () => {
@@ -395,8 +396,8 @@
         });
         
         loadBookedSlots();
-        tg.setHeaderColor('#1a1a1a');
-        tg.setBackgroundColor('#1a1a1a');
+        tg.setHeaderColor('#1a0000');
+        tg.setBackgroundColor('#1a0000');
     </script>
 </body>
 </html>
