@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=200">
+    <link rel="stylesheet" href="style.css?v=300">
     <title>МАЛЮСКА</title>
+    <meta http-equiv="refresh" content="300">
 </head>
 <body>
     <div class="container">
@@ -102,6 +103,7 @@
                     <span class="legend-item"><span class="dot busy"></span>занято</span>
                     <span class="legend-item"><span class="dot weekend"></span>выходной</span>
                 </div>
+                <button class="refresh-btn" onclick="forceRefresh()">🔄 обновить</button>
             </div>
 
             <div class="form-group">
@@ -185,6 +187,7 @@
         let selectedDate = "";
         let selectedTime = "";
         let bookedSlots = {};
+        let isLoading = false;
         tg.expand();
 
         const staticSchedule = {
@@ -230,19 +233,47 @@
 
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
-        // 🔥 ЗАГРУЗКА СЛОТОВ С СЕРВЕРА (НЕ LOCALSTORAGE!)
+        // 🔥 ЖЕСТКАЯ ЗАГРУЗКА С API
         async function loadBookedSlots() {
+            if (isLoading) return;
+            isLoading = true;
+            
+            const calendar = document.getElementById('calendar');
+            if (calendar) calendar.style.opacity = '0.5';
+            
             try {
-                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now());
+                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                
                 if (response.ok) {
                     bookedSlots = await response.json();
-                    console.log('✅ слоты загружены:', bookedSlots);
+                    console.log('✅ слоты:', bookedSlots);
+                } else {
+                    console.log('⚠️ API ошибка');
+                    bookedSlots = {};
                 }
             } catch (e) {
-                console.log('⚠️ API недоступно:', e);
+                console.log('❌ API недоступно:', e);
                 bookedSlots = {};
             }
+            
+            if (calendar) calendar.style.opacity = '1';
+            isLoading = false;
             generateCalendar();
+        }
+
+        // 🔥 ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
+        async function forceRefresh() {
+            const btn = document.querySelector('.refresh-btn');
+            if (btn) btn.textContent = '⏳ загрузка...';
+            
+            bookedSlots = {};
+            await loadBookedSlots();
+            
+            if (btn) btn.textContent = '🔄 обновить';
+            tg.showPopup({ title: 'обновлено', message: 'слоты обновлены', buttons: [{ type: 'ok' }] });
         }
 
         function generateCalendar() {
@@ -303,7 +334,8 @@
             selectedDate = date;
             selectedTime = "";
             document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
-            document.querySelector(`[data-date="${date}"]`).classList.add('selected');
+            const selected = document.querySelector(`[data-date="${date}"]`);
+            if (selected) selected.classList.add('selected');
             updateTimeSlots(date);
         }
 
@@ -340,7 +372,7 @@
         function selectTime(time) {
             selectedTime = time;
             document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
-            event.target.classList.add('selected');
+            if (event.target) event.target.classList.add('selected');
         }
 
         function setAge(age) {
@@ -348,12 +380,9 @@
             document.getElementById('age-18').classList.toggle('active', age >= 18);
             document.getElementById('age-under').classList.toggle('active', age < 18);
             
-            // 🔥 ПОКАЗЫВАЕМ ПРЕДУПРЕЖДЕНИЕ ДЛЯ ДО 18
             const warning = document.getElementById('age-warning');
-            if (age < 18) {
-                warning.style.display = 'block';
-            } else {
-                warning.style.display = 'none';
+            if (warning) {
+                warning.style.display = (age < 18) ? 'block' : 'none';
             }
         }
 
@@ -361,7 +390,7 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(name).classList.add('active');
-            event.target.classList.add('active');
+            if (event.target) event.target.classList.add('active');
         }
 
         function sendData() {
@@ -376,8 +405,8 @@
             // 🔥 ПРОВЕРКА ЧТО ВРЕМЯ ЕЩЁ СВОБОДНО
             const bookedTimes = bookedSlots[selectedDate] || [];
             if (bookedTimes.includes(selectedTime)) {
-                tg.showAlert("❌ это время только что заняли! обнови страницу");
-                loadBookedSlots();
+                tg.showAlert("❌ это время только что заняли! нажми обновить");
+                forceRefresh();
                 return;
             }
             
@@ -389,14 +418,12 @@
                 comment: comment || '',
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
-            
-            // 🔥 ОБНОВЛЯЕМ СЛОТЫ ПОСЛЕ БРОНИ
-            setTimeout(() => {
-                loadBookedSlots();
-            }, 3000);
         }
 
-        // 🔥 ОБНОВЛЕНИЕ ПРИ ВОЗВРАТЕ В ПРИЛОЖЕНИЕ
+        // 🔥 АВТООБНОВЛЕНИЕ КАЖДЫЕ 10 СЕК
+        setInterval(loadBookedSlots, 10000);
+        
+        // 🔥 ОБНОВЛЕНИЕ ПРИ ВОЗВРАТЕ
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 loadBookedSlots();
@@ -406,8 +433,8 @@
         // 🔥 ЗАГРУЗКА ПРИ СТАРТЕ
         loadBookedSlots();
         
-        tg.setHeaderColor('#1a0000');
-        tg.setBackgroundColor('#1a0000');
+        tg.setHeaderColor('#1a1a1a');
+        tg.setBackgroundColor('#1a1a1a');
     </script>
 </body>
 </html>
