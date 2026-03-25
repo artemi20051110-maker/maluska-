@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=130">
+    <link rel="stylesheet" href="style.css?v=200">
     <title>МАЛЮСКА</title>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1 class="title">МАЛЮСКА</h1>
-            <p class="subtitle">пирсинг студия</p>
+            <p class="subtitle">пирсинг мастер</p>
         </div>
         
         <div class="tabs">
@@ -24,6 +24,9 @@
                 <div class="age-selector">
                     <button class="age-btn" id="age-18" onclick="setAge(18)">18+</button>
                     <button class="age-btn" id="age-under" onclick="setAge(17)">до 18</button>
+                </div>
+                <div class="age-warning" id="age-warning">
+                    ⚠️ до 18 лет только с письменным согласием родителей
                 </div>
             </div>
 
@@ -227,23 +230,19 @@
 
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
-        function loadBookedSlots() {
-            const today = new Date().toDateString();
-            const cacheKey = 'bookedSlots_' + today;
-            const cached = localStorage.getItem(cacheKey);
-            if (cached) bookedSlots = JSON.parse(cached);
-            else bookedSlots = {};
-            generateCalendar();
-        }
-
-        function updateSlotsAfterBooking(date, time) {
-            const today = new Date().toDateString();
-            const cacheKey = 'bookedSlots_' + today;
-            if (!bookedSlots[date]) bookedSlots[date] = [];
-            if (!bookedSlots[date].includes(time)) {
-                bookedSlots[date].push(time);
-                localStorage.setItem(cacheKey, JSON.stringify(bookedSlots));
+        // 🔥 ЗАГРУЗКА СЛОТОВ С СЕРВЕРА (НЕ LOCALSTORAGE!)
+        async function loadBookedSlots() {
+            try {
+                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now());
+                if (response.ok) {
+                    bookedSlots = await response.json();
+                    console.log('✅ слоты загружены:', bookedSlots);
+                }
+            } catch (e) {
+                console.log('⚠️ API недоступно:', e);
+                bookedSlots = {};
             }
+            generateCalendar();
         }
 
         function generateCalendar() {
@@ -348,6 +347,14 @@
             selectedAge = age >= 18 ? "18+" : "до 18";
             document.getElementById('age-18').classList.toggle('active', age >= 18);
             document.getElementById('age-under').classList.toggle('active', age < 18);
+            
+            // 🔥 ПОКАЗЫВАЕМ ПРЕДУПРЕЖДЕНИЕ ДЛЯ ДО 18
+            const warning = document.getElementById('age-warning');
+            if (age < 18) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
         }
 
         function showTab(name) {
@@ -369,12 +376,10 @@
             // 🔥 ПРОВЕРКА ЧТО ВРЕМЯ ЕЩЁ СВОБОДНО
             const bookedTimes = bookedSlots[selectedDate] || [];
             if (bookedTimes.includes(selectedTime)) {
-                tg.showAlert("❌ это время только что заняли! выбери другое");
+                tg.showAlert("❌ это время только что заняли! обнови страницу");
                 loadBookedSlots();
                 return;
             }
-            
-            updateSlotsAfterBooking(selectedDate, selectedTime);
             
             tg.sendData(JSON.stringify({
                 service,
@@ -385,17 +390,22 @@
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
             
-            // 🔥 ПЕРЕЗАГРУЗКА ПОСЛЕ БРОНИ
+            // 🔥 ОБНОВЛЯЕМ СЛОТЫ ПОСЛЕ БРОНИ
             setTimeout(() => {
                 loadBookedSlots();
-            }, 2000);
+            }, 3000);
         }
 
+        // 🔥 ОБНОВЛЕНИЕ ПРИ ВОЗВРАТЕ В ПРИЛОЖЕНИЕ
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) loadBookedSlots();
+            if (!document.hidden) {
+                loadBookedSlots();
+            }
         });
         
+        // 🔥 ЗАГРУЗКА ПРИ СТАРТЕ
         loadBookedSlots();
+        
         tg.setHeaderColor('#1a0000');
         tg.setBackgroundColor('#1a0000');
     </script>
