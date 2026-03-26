@@ -14,15 +14,16 @@ body {
     background: #1a1a1a;
     padding: 24px 18px;
     border-radius: 16px;
+    border: 1px solid #330000;
 }
 
 .header { text-align: center; margin-bottom: 24px; }
 .title { color: #fff; font-size: 28px; font-weight: 700; margin-bottom: 4px; letter-spacing: 3px; }
-.subtitle { color: #666; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+.subtitle { color: #cc3333; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
 
 .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
 .tab-btn { flex: 1; padding: 12px; background: #252525; border: 1px solid #333; color: #888; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 500; }
-.tab-btn.active { background: #fff; color: #000; border-color: #fff; }
+.tab-btn.active { background: #cc3333; color: #fff; border-color: #cc3333; }
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
@@ -32,23 +33,23 @@ label { display: block; color: #888; font-size: 11px; margin-bottom: 10px; text-
 
 .age-selector { display: flex; gap: 8px; }
 .age-btn { flex: 1; padding: 14px; background: #252525; border: 1px solid #333; color: #fff; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; }
-.age-btn.active { background: #fff; color: #000; border-color: #fff; }
+.age-btn.active { background: #cc3333; color: #fff; border-color: #cc3333; }
 
 .age-warning { display: none; background: #2a1a1a; border: 1px solid #cc3333; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 11px; color: #ff6666; text-align: center; }
 
 select, textarea { width: 100%; padding: 14px; background: #252525; border: 1px solid #333; color: #fff; border-radius: 10px; font-size: 14px; }
-select:focus, textarea:focus { outline: none; border-color: #666; }
+select:focus, textarea:focus { outline: none; border-color: #cc3333; }
 textarea { min-height: 70px; resize: vertical; }
 
 .calendar-wrapper { overflow-x: auto; padding-bottom: 8px; }
 .calendar-wrapper::-webkit-scrollbar { height: 3px; }
-.calendar-wrapper::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+.calendar-wrapper::-webkit-scrollbar-thumb { background: #cc3333; border-radius: 2px; }
 .cal-row { display: flex; gap: 6px; min-width: max-content; }
 .cal-h { width: 48px; text-align: center; font-size: 10px; color: #666; padding: 6px 0; }
 
 .cal-day { width: 48px; min-height: 65px; background: #252525; border: 1px solid #333; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 6px; }
-.cal-day.today { border-color: #fff; }
-.cal-day.selected { background: #fff; color: #000; }
+.cal-day.today { border-color: #cc3333; }
+.cal-day.selected { background: #cc3333; color: #fff; }
 .cal-day.free { border-color: #333; }
 .cal-day.busy { opacity: 0.4; }
 .cal-day.weekend { opacity: 0.3; }
@@ -57,7 +58,7 @@ textarea { min-height: 70px; resize: vertical; }
 .cal-m { font-size: 9px; color: #666; margin-top: 2px; }
 .cal-d { font-size: 8px; color: #666; margin-top: 2px; }
 .cal-status { font-size: 9px; color: #666; margin-top: 4px; }
-.cal-day.selected .cal-status { color: #666; }
+.cal-day.selected .cal-m, .cal-day.selected .cal-d, .cal-day.selected .cal-status { color: #fff; }
 
 .legend { display: flex; gap: 12px; justify-content: center; margin-top: 12px; }
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 9px; color: #666; }
@@ -71,39 +72,18 @@ textarea { min-height: 70px; resize: vertical; }
 .time-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .time-slot { padding: 12px 16px; background: #252525; border: 1px solid #333; color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; }
 .time-slot:hover { border-color: #666; }
-.time-slot.selected { background: #fff; color: #000; border-color: #fff; }
+.time-slot.selected { background: #cc3333; color: #fff; border-color: #cc3333; }
 .no-slots { color: #666; font-size: 11px; }
 
-.main-button { width: 100%; padding: 16px; background: #fff; border: none; color: #000; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 20px; font-size: 14px; }
+.main-button { width: 100%; padding: 16px; background: #cc3333; border: none; color: #fff; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 20px; font-size: 14px; }
 .main-button:active { opacity: 0.8; }
-
-.hint { font-size: 10px; color: #666; margin-top: 10px; text-align: center; }
 
 .price-title { color: #fff; font-size: 18px; text-align: center; margin-bottom: 8px; }
 .price-note { text-align: center; font-size: 10px; color: #666; margin-bottom: 20px; }
 .price-category { color: #888; font-size: 11px; margin: 20px 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid #333; text-transform: uppercase; letter-spacing: 1px; }
 .price-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #252525; font-size: 13px; }
-.price-item span:last-child { color: #fff; font-weight: 600; }
+.price-item span:last-child { color: #cc3333; font-weight: 600; }
 .price-hint { font-size: 10px; color: #666; padding: 8px 10px; margin: 5px 0 15px 0; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 2px solid #666; }
 
 .price-info { background: #252525; border-radius: 10px; padding: 15px; margin-top: 20px; }
 .price-info p { font-size: 10px; color: #666; margin: 6px 0; text-align: center; }
-.refresh-btn {
-    width: 100%;
-    padding: 10px;
-    background: #252525;
-    border: 1px solid #333;
-    color: #cc3333;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 8px;
-    font-size: 12px;
-    transition: all 0.3s;
-}
-.refresh-btn:hover {
-    border-color: #cc3333;
-    background: #2a0000;
-}
-.refresh-btn:active {
-    opacity: 0.8;
-}
