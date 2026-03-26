@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=300">
+    <link rel="stylesheet" href="style.css?v=500">
     <title>МАЛЮСКА</title>
-    <meta http-equiv="refresh" content="300">
 </head>
 <body>
     <div class="container">
@@ -233,7 +232,7 @@
 
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
-        // 🔥 ЖЕСТКАЯ ЗАГРУЗКА С API
+        // Загрузка слотов с API
         async function loadBookedSlots() {
             if (isLoading) return;
             isLoading = true;
@@ -250,12 +249,9 @@
                 if (response.ok) {
                     bookedSlots = await response.json();
                     console.log('✅ слоты:', bookedSlots);
-                } else {
-                    console.log('⚠️ API ошибка');
-                    bookedSlots = {};
                 }
             } catch (e) {
-                console.log('❌ API недоступно:', e);
+                console.log('❌ API ошибка:', e);
                 bookedSlots = {};
             }
             
@@ -264,12 +260,11 @@
             generateCalendar();
         }
 
-        // 🔥 ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
+        // Принудительное обновление
         async function forceRefresh() {
             const btn = document.querySelector('.refresh-btn');
             if (btn) btn.textContent = '⏳ загрузка...';
             
-            bookedSlots = {};
             await loadBookedSlots();
             
             if (btn) btn.textContent = '🔄 обновить';
@@ -278,6 +273,8 @@
 
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
+            if (!calendar) return;
+            
             const today = new Date();
             const days = ['вс','пн','вт','ср','чт','пт','сб'];
             const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
@@ -333,7 +330,8 @@
         function selectDate(date) {
             selectedDate = date;
             selectedTime = "";
-            document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+            const days = document.querySelectorAll('.cal-day');
+            days.forEach(d => d.classList.remove('selected'));
             const selected = document.querySelector(`[data-date="${date}"]`);
             if (selected) selected.classList.add('selected');
             updateTimeSlots(date);
@@ -369,28 +367,31 @@
             container.innerHTML = html;
         }
 
-        function selectTime(time) {
+        function selectTime(time, event) {
             selectedTime = time;
-            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
-            if (event.target) event.target.classList.add('selected');
+            const slots = document.querySelectorAll('.time-slot');
+            slots.forEach(t => t.classList.remove('selected'));
+            if (event && event.target) event.target.classList.add('selected');
         }
 
         function setAge(age) {
             selectedAge = age >= 18 ? "18+" : "до 18";
-            document.getElementById('age-18').classList.toggle('active', age >= 18);
-            document.getElementById('age-under').classList.toggle('active', age < 18);
-            
+            const btn18 = document.getElementById('age-18');
+            const btnUnder = document.getElementById('age-under');
             const warning = document.getElementById('age-warning');
-            if (warning) {
-                warning.style.display = (age < 18) ? 'block' : 'none';
-            }
+            
+            if (btn18) btn18.classList.toggle('active', age >= 18);
+            if (btnUnder) btnUnder.classList.toggle('active', age < 18);
+            if (warning) warning.style.display = (age < 18) ? 'block' : 'none';
         }
 
-        function showTab(name) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        function showTab(name, event) {
+            const contents = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-btn');
+            contents.forEach(t => t.classList.remove('active'));
+            buttons.forEach(b => b.classList.remove('active'));
             document.getElementById(name).classList.add('active');
-            if (event.target) event.target.classList.add('active');
+            if (event && event.target) event.target.classList.add('active');
         }
 
         function sendData() {
@@ -402,7 +403,7 @@
             if (!selectedDate) return tg.showAlert("выбери дату");
             if (!selectedTime) return tg.showAlert("выбери время");
             
-            // 🔥 ПРОВЕРКА ЧТО ВРЕМЯ ЕЩЁ СВОБОДНО
+            // Проверка что время ещё свободно
             const bookedTimes = bookedSlots[selectedDate] || [];
             if (bookedTimes.includes(selectedTime)) {
                 tg.showAlert("❌ это время только что заняли! нажми обновить");
@@ -410,6 +411,7 @@
                 return;
             }
             
+            // Отправляем данные боту
             tg.sendData(JSON.stringify({
                 service,
                 date: selectedDate,
@@ -418,19 +420,22 @@
                 comment: comment || '',
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
+            
+            // 🔥 АВТООБНОВЛЕНИЕ ЧЕРЕЗ 3 СЕКУНДЫ ПОСЛЕ БРОНИ
+            setTimeout(() => {
+                forceRefresh();
+            }, 3000);
         }
 
-        // 🔥 АВТООБНОВЛЕНИЕ КАЖДЫЕ 10 СЕК
+        // Автообновление каждые 10 секунд
         setInterval(loadBookedSlots, 10000);
         
-        // 🔥 ОБНОВЛЕНИЕ ПРИ ВОЗВРАТЕ
+        // Обновление при возврате в приложение
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                loadBookedSlots();
-            }
+            if (!document.hidden) loadBookedSlots();
         });
         
-        // 🔥 ЗАГРУЗКА ПРИ СТАРТЕ
+        // Загрузка при старте
         loadBookedSlots();
         
         tg.setHeaderColor('#1a1a1a');
