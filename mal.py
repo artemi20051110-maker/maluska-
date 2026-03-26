@@ -143,17 +143,17 @@ async def start(message: types.Message):
     await bot.set_chat_menu_button(chat_id=message.chat.id, menu_button=types.MenuButtonCommands())
     
     text = (
-        f"привет! это запись к малюске на пирсинг.\n\n"
+        f"привет! это запись к Малюске на пирсинг.\n\n"
+        f"список обширный, я думаю выберешь что то для себя.\n"
         f"жми внизу чтобы записаться\n"
         f"бронь 300₽ (возвращается)\n"
-        f"оплата: {PAYMENT_PHONE}\n"
         f"после записи отправь чек"
     )
     
     await message.answer(text, reply_markup=main_kb)
     logger.info(f"📩 /start от {message.from_user.id}")
 
-@dp.message(F.text == "🛠 поддержка / админ")
+@dp.message(F.text == "по вопросам проколов")
 async def support(message: types.Message):
     await message.answer(f"пиши: {MASTER_USERNAME}")
 
@@ -273,7 +273,7 @@ async def web_app_handler(message: types.Message):
         
         logger.info(f"✅ бронь #{booking_id} создана")
         
-        report = f"🩸 ЗАЯВКА #{booking_id}\n\n👤 @{message.from_user.username}\n📅 {date} {time}\n💉 {service}\n🎂 {data.get('age')}"
+        report = f"🩸 ЗАЯВКА #{booking_id}\n\n👤 @{message.from_user.username}\n📅 {date} {time}\n {service}\n {data.get('age')}"
         if comment:
             report += f"\n💬 {comment}"
         
@@ -287,12 +287,12 @@ async def web_app_handler(message: types.Message):
         
         needs_consultation = any(p in service.lower() for p in ANATOMY_PIERCINGS)
         
-        msg = f"✅ бронь #{booking_id}\n\n📅 {date} в {time}\n💉 {service}\n\n💰 300₽ на {PAYMENT_PHONE}"
+        msg = f"✅ бронь #{booking_id}\n\n📅 {date} в {time}\n {service}\n\n 300₽ на {PAYMENT_PHONE}"
         
         if needs_consultation:
-            msg += f"\n\n⚠️ {service} — нужна консультация\n📲 напиши: {MASTER_USERNAME}"
+            msg += f"\n\n {service} — нужна консультация\n напиши: {MASTER_USERNAME}"
         
-        msg += "\n\n📍 после оплаты отправь чек в этот чат"
+        msg += "\n\n после оплаты отправь чек в этот чат"
         
         await message.answer(msg)
         logger.info(f"✅ клиент получил подтверждение #{booking_id}")
@@ -323,7 +323,7 @@ async def handle_photo(message: types.Message):
         await bot.send_photo(
             MY_ID,
             message.photo[-1].file_id,
-            caption=f"💳 ЧЕК\n👤 @{message.from_user.username or 'без_ника'}\nID: {message.from_user.id}\nБронь #{booking[0]}\n📅 {booking[1]} {booking[2]}\n💉 {booking[3]}"
+            caption=f" ЧЕК\n👤 @{message.from_user.username or 'без_ника'}\nID: {message.from_user.id}\nБронь #{booking[0]}\n📅 {booking[1]} {booking[2]}\n💉 {booking[3]}"
         )
         
         await bot.send_message(ADMIN_CHANNEL_ID, f"📨 чек по брони #{booking[0]} получен")
@@ -340,7 +340,7 @@ async def confirm_payment(callback: types.CallbackQuery):
         return
     
     booking_id = int(callback.data.split("_")[1])
-    logger.info(f"💰 подтверждение оплаты #{booking_id}")
+    logger.info(f" подтверждение оплаты #{booking_id}")
     
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -356,11 +356,11 @@ async def confirm_payment(callback: types.CallbackQuery):
             await bot.send_photo(
                 booking[0],
                 photo=FSInputFile(guide_path),
-                caption=f"✅ БРОНЬ #{booking_id} ПОДТВЕРЖДЕНА!\n\n📅 {booking[1]} в {booking[2]}\n💉 {booking[3]}\n\n📍 {STUDIO_ADDRESS}\n🗺 вход со стороны Попова"
+                caption=f" БРОНЬ #{booking_id} ПОДТВЕРЖДЕНА!\n\n {booking[1]} в {booking[2]}\n💉 {booking[3]}\n\n📍 {STUDIO_ADDRESS}\n🗺 вход со стороны Попова"
             )
         else:
             await bot.send_message(booking[0], 
-                f"✅ БРОНЬ #{booking_id} ПОДТВЕРЖДЕНА!\n\n📅 {booking[1]} в {booking[2]}\n💉 {booking[3]}\n\n📍 {STUDIO_ADDRESS}\n🗺 вход со стороны Попова"
+                f" БРОНЬ #{booking_id} ПОДТВЕРЖДЕНА!\n\n {booking[1]} в {booking[2]}\n💉 {booking[3]}\n\n📍 {STUDIO_ADDRESS}\n🗺 вход со стороны Попова"
             )
         
         try:
@@ -369,7 +369,7 @@ async def confirm_payment(callback: types.CallbackQuery):
             pass
         
         await callback.answer("✅ подтверждено!")
-        logger.info(f"💰 оплата #{booking_id} подтверждена")
+        logger.info(f" оплата #{booking_id} подтверждена")
     
     conn.close()
 

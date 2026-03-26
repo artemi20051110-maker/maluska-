@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=500">
+    <link rel="stylesheet" href="style.css?v=600">
     <title>МАЛЮСКА</title>
 </head>
 <body>
@@ -14,8 +14,8 @@
         </div>
         
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('booking')">запись</button>
-            <button class="tab-btn" onclick="showTab('price')">прайс</button>
+            <button class="tab-btn active" onclick="showTab('booking', event)">запись</button>
+            <button class="tab-btn" onclick="showTab('price', event)">прайс</button>
         </div>
 
         <div id="booking" class="tab-content active">
@@ -102,7 +102,6 @@
                     <span class="legend-item"><span class="dot busy"></span>занято</span>
                     <span class="legend-item"><span class="dot weekend"></span>выходной</span>
                 </div>
-                <button class="refresh-btn" onclick="forceRefresh()">🔄 обновить</button>
             </div>
 
             <div class="form-group">
@@ -186,7 +185,6 @@
         let selectedDate = "";
         let selectedTime = "";
         let bookedSlots = {};
-        let isLoading = false;
         tg.expand();
 
         const staticSchedule = {
@@ -232,43 +230,33 @@
 
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
-        // Загрузка слотов с API
-        async function loadBookedSlots() {
-            if (isLoading) return;
-            isLoading = true;
+        // 🔥 ЗАГРУЗКА ИЗ LOCALSTORAGE (РАБОТАЕТ БЕЗ API!)
+        function loadBookedSlots() {
+            const today = new Date().toDateString();
+            const cacheKey = 'bookedSlots_' + today;
+            const cached = localStorage.getItem(cacheKey);
             
-            const calendar = document.getElementById('calendar');
-            if (calendar) calendar.style.opacity = '0.5';
-            
-            try {
-                const response = await fetch('http://82.24.123.231:5000/slots?t=' + Date.now(), {
-                    cache: 'no-store',
-                    headers: { 'Cache-Control': 'no-cache' }
-                });
-                
-                if (response.ok) {
-                    bookedSlots = await response.json();
-                    console.log('✅ слоты:', bookedSlots);
-                }
-            } catch (e) {
-                console.log('❌ API ошибка:', e);
+            if (cached) {
+                bookedSlots = JSON.parse(cached);
+                console.log('✅ слоты из кэша:', bookedSlots);
+            } else {
                 bookedSlots = {};
             }
             
-            if (calendar) calendar.style.opacity = '1';
-            isLoading = false;
             generateCalendar();
         }
 
-        // Принудительное обновление
-        async function forceRefresh() {
-            const btn = document.querySelector('.refresh-btn');
-            if (btn) btn.textContent = '⏳ загрузка...';
+        // 🔥 СОХРАНЕНИЕ ПОСЛЕ БРОНИ
+        function saveBookedSlot(date, time) {
+            const today = new Date().toDateString();
+            const cacheKey = 'bookedSlots_' + today;
             
-            await loadBookedSlots();
-            
-            if (btn) btn.textContent = '🔄 обновить';
-            tg.showPopup({ title: 'обновлено', message: 'слоты обновлены', buttons: [{ type: 'ok' }] });
+            if (!bookedSlots[date]) bookedSlots[date] = [];
+            if (!bookedSlots[date].includes(time)) {
+                bookedSlots[date].push(time);
+                localStorage.setItem(cacheKey, JSON.stringify(bookedSlots));
+                console.log('✅ слот сохранён:', date, time);
+            }
         }
 
         function generateCalendar() {
@@ -362,7 +350,7 @@
             
             let html = '';
             availableTimes.forEach(time => {
-                html += `<button class="time-slot" onclick="selectTime('${time}')">${time}</button>`;
+                html += `<button class="time-slot" onclick="selectTime('${time}', event)">${time}</button>`;
             });
             container.innerHTML = html;
         }
@@ -406,12 +394,14 @@
             // Проверка что время ещё свободно
             const bookedTimes = bookedSlots[selectedDate] || [];
             if (bookedTimes.includes(selectedTime)) {
-                tg.showAlert("❌ это время только что заняли! нажми обновить");
-                forceRefresh();
+                tg.showAlert("❌ это время только что заняли! закрой и открой заново");
                 return;
             }
             
-            // Отправляем данные боту
+            // Сохраняем в localStorage
+            saveBookedSlot(selectedDate, selectedTime);
+            
+            // Отправляем боту
             tg.sendData(JSON.stringify({
                 service,
                 date: selectedDate,
@@ -420,16 +410,8 @@
                 comment: comment || '',
                 username: tg.initDataUnsafe?.user?.username || "клиент"
             }));
-            
-            // 🔥 АВТООБНОВЛЕНИЕ ЧЕРЕЗ 3 СЕКУНДЫ ПОСЛЕ БРОНИ
-            setTimeout(() => {
-                forceRefresh();
-            }, 3000);
         }
 
-        // Автообновление каждые 10 секунд
-        setInterval(loadBookedSlots, 10000);
-        
         // Обновление при возврате в приложение
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) loadBookedSlots();
