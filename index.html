@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=600">
+    <link rel="stylesheet" href="style.css?v=700">
     <title>МАЛЮСКА</title>
 </head>
 <body>
@@ -230,33 +230,10 @@
 
         const defaultTimes = ["16:00", "17:00", "18:00", "19:00", "20:00"];
 
-        // 🔥 ЗАГРУЗКА ИЗ LOCALSTORAGE (РАБОТАЕТ БЕЗ API!)
+        // 🔥 БЕЗ LOCALSTORAGE - просто пустой объект
         function loadBookedSlots() {
-            const today = new Date().toDateString();
-            const cacheKey = 'bookedSlots_' + today;
-            const cached = localStorage.getItem(cacheKey);
-            
-            if (cached) {
-                bookedSlots = JSON.parse(cached);
-                console.log('✅ слоты из кэша:', bookedSlots);
-            } else {
-                bookedSlots = {};
-            }
-            
+            bookedSlots = {};
             generateCalendar();
-        }
-
-        // 🔥 СОХРАНЕНИЕ ПОСЛЕ БРОНИ
-        function saveBookedSlot(date, time) {
-            const today = new Date().toDateString();
-            const cacheKey = 'bookedSlots_' + today;
-            
-            if (!bookedSlots[date]) bookedSlots[date] = [];
-            if (!bookedSlots[date].includes(time)) {
-                bookedSlots[date].push(time);
-                localStorage.setItem(cacheKey, JSON.stringify(bookedSlots));
-                console.log('✅ слот сохранён:', date, time);
-            }
         }
 
         function generateCalendar() {
@@ -281,7 +258,6 @@
                 const isToday = i === 0;
                 
                 const staticData = staticSchedule[dateStr];
-                const bookedTimes = bookedSlots[dateStr] || [];
                 
                 let statusClass = "free";
                 let statusText = "";
@@ -292,12 +268,6 @@
                     else if (staticData.status === "event") statusText = staticData.note;
                     else if (staticData.status === "busy") statusText = "нет";
                     else if (staticData.times) statusText = staticData.times.length;
-                } else if (bookedTimes.length >= defaultTimes.length) {
-                    statusClass = "busy";
-                    statusText = "нет";
-                } else if (bookedTimes.length > 0) {
-                    statusClass = "free";
-                    statusText = defaultTimes.length - bookedTimes.length;
                 } else {
                     statusClass = "free";
                     statusText = "5";
@@ -329,7 +299,6 @@
             const container = document.getElementById('time-slots');
             const dateLabel = document.getElementById('selected-date-label');
             const staticData = staticSchedule[date];
-            const bookedTimes = bookedSlots[date] || [];
             
             const dateObj = new Date(date);
             const dayName = dateObj.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -341,7 +310,6 @@
             }
             
             let availableTimes = staticData && staticData.times ? staticData.times : [...defaultTimes];
-            availableTimes = availableTimes.filter(t => !bookedTimes.includes(t));
             
             if (availableTimes.length === 0) {
                 container.innerHTML = '<p class="no-slots">все слоты заняты</p>';
@@ -391,17 +359,8 @@
             if (!selectedDate) return tg.showAlert("выбери дату");
             if (!selectedTime) return tg.showAlert("выбери время");
             
-            // Проверка что время ещё свободно
-            const bookedTimes = bookedSlots[selectedDate] || [];
-            if (bookedTimes.includes(selectedTime)) {
-                tg.showAlert("❌ это время только что заняли! закрой и открой заново");
-                return;
-            }
+            // 🔥 НЕ ПРОВЕРЯЕМ localStorage - бот проверит базу!
             
-            // Сохраняем в localStorage
-            saveBookedSlot(selectedDate, selectedTime);
-            
-            // Отправляем боту
             tg.sendData(JSON.stringify({
                 service,
                 date: selectedDate,
@@ -412,11 +371,6 @@
             }));
         }
 
-        // Обновление при возврате в приложение
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) loadBookedSlots();
-        });
-        
         // Загрузка при старте
         loadBookedSlots();
         
